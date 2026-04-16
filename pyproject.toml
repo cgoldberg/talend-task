@@ -1,0 +1,42 @@
+[project]
+name = "talend_task"
+version = "0.1.0"
+requires-python = ">= 3.10"
+classifiers = ["Private :: Do Not Upload"]
+dependencies = [
+    "python-dotenv==1.2.2",
+    "requests==2.33.1",
+    "rich==15.0.0",
+]
+
+[dependency-groups]
+lint = [
+    "black",
+    "ruff",
+]
+validate = [
+    "packaging",
+    "validate-pyproject",
+]
+
+[project.scripts]
+talend_task = "talend_task:main"
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 88
+respect-gitignore = true
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "I", "PT", "RUF", "TID", "W"
+]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+docstring-code-line-length = 88
+docstring-code-format = true
