@@ -27,7 +27,9 @@ try:
     ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
     API_URL = os.environ["API_URL"]
 except KeyError as e:
-    raise RuntimeError(f".env file or environment variables must be set. Missing: {e}")
+    logger.error(f"fatal: .env file or environment variables must be set. Missing: {e}")
+    sys.exit(1)
+
 
 BASE_URL = urljoin(API_URL, "processing")
 
@@ -155,7 +157,7 @@ def main():
                 input("\nPress <Enter> to exit...")
             else:
                 run_talend_job(job_id)
-        except (Exception, KeyboardInterrupt) as e:
+        except (ValueError, KeyboardInterrupt) as e:
             input(f"\n{e}\nPress <Enter> to exit...")
             sys.exit()
 
