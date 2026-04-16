@@ -41,8 +41,8 @@
 
 ## About:
 
-`talend-task` is a Python CLI tool for remotely running Talend ETL jobs
-(tasks).
+`talend-task` is a Python CLI tool for remotely running
+[Talend](https://talend.com) ETL jobs (tasks).
 
 You can specify a job to run by its name (using the `--job` argument)
 or it will list all available jobs and let you select which one to run.
@@ -61,9 +61,10 @@ pip install talend-task
 
 ## Configuration:
 
-You need to configure an Access Token (generated in Talend Management Console)
-and the API endpoint URL you will connect to
-(i.e. `https://api.<region>.talend.com`).
+You need to configure an Access Token (generated in
+[Talend Management Console](https://help.qlik.com/talend/management-console-user-guide))
+and the API endpoint URL you will connect to (i.e.
+`https://api.<region>.talend.com`).
 
 These are setup using the `API_URL` and `ACCESS_TOKEN` environment variables:
 
