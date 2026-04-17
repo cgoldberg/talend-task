@@ -93,7 +93,7 @@ usage: talend_task [-h] [--wait] [--job JOB]
 options:
   -h, --help  show this help message and exit
   --wait      wait for task to complete and show status
-  --job JOB   Talend ETL task name
+  --job JOB   task name
 ```
 
 ----

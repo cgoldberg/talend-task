@@ -12,7 +12,7 @@ import os
 import sys
 import time
 from datetime import datetime
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 from dotenv import load_dotenv
@@ -23,11 +23,29 @@ logger = logging.getLogger(__name__)
 
 
 load_dotenv()
+
+
+def _validate_url(url):
+    valid_domain = "talend.com"
+    error_msg = "Invalid API_URL"
+    url = url.strip()
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or not parsed.hostname:
+        raise ValueError(f"{error_msg}: {url}")
+    host = parsed.hostname
+    if host != valid_domain and not host.endswith(f".{valid_domain}"):
+        raise ValueError(f"{error_msg}: {url}")
+    return url
+
+
 try:
     ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
-    API_URL = os.environ["API_URL"]
+    API_URL = _validate_url(os.environ["API_URL"])
 except KeyError as e:
     logger.error(f"fatal: .env file or environment variables must be set. Missing: {e}")
+    sys.exit(1)
+except Exception as e:
+    logger.error(f"fatal: {e}")
     sys.exit(1)
 
 
@@ -111,7 +129,7 @@ def main():
     )
     parser.add_argument(
         "--job",
-        help="Talend ETL task name",
+        help="task name",
     )
     args = parser.parse_args()
     job_name = args.job
@@ -154,12 +172,11 @@ def main():
                 logger.info(
                     f"\nExecution finished with status: '{status}' (time: {elapsed})"
                 )
-                input("\nPress <Enter> to exit...")
             else:
                 run_talend_job(job_id)
-        except (ValueError, KeyboardInterrupt) as e:
-            input(f"\n{e}\nPress <Enter> to exit...")
-            sys.exit()
+        except (Exception, KeyboardInterrupt) as e:
+            logger.error(f"fatal: {e}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":
