@@ -39,7 +39,6 @@ download = "https://pypi.org/project/talend_task"
 
 [dependency-groups]
 lint = [
-    "black",
     "ruff",
 ]
 validate = [
