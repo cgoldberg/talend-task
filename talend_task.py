@@ -107,7 +107,7 @@ def run_console(job_id):
             progress.advance(task)
 
 
-def run_unnatended(job_id):
+def run_talend_job_and_wait(job_id):
     exec_id = run_talend_job(job_id)
     while True:
         status = get_execution_status(exec_id)
@@ -142,7 +142,7 @@ def main():
         logger.info(f"\nExecuting job: '{job_name}' ....")
         if wait_enabled:
             start = time.time()
-            status = run_unnatended(job_id)
+            status = run_talend_job_and_wait(job_id)
             stop = time.time()
             elapsed = _convert_time(stop - start)
             logger.info(f"\nExecution of job '{job_name}' finished")
