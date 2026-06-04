@@ -107,7 +107,7 @@ def run_console(job_id):
             progress.advance(task)
 
 
-def run_talend_job_and_wait(job_id):
+def run_talend_job_and_wait(job_id, poll_interval=10.0):
     exec_id = run_talend_job(job_id)
     while True:
         status = get_execution_status(exec_id)
@@ -117,7 +117,7 @@ def run_talend_job_and_wait(job_id):
         if status not in ("dispatching", "executing"):
             return status
         else:
-            time.sleep(10)
+            time.sleep(poll_interval)
 
 
 def main():
