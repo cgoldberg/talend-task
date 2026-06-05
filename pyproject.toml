@@ -44,6 +44,9 @@ source = "https://github.com/cgoldberg/talend-task"
 download = "https://pypi.org/project/talend-task"
 
 [dependency-groups]
+dev = [
+    "tox",
+]
 lint = [
     "ruff",
 ]
