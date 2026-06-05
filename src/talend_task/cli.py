@@ -30,7 +30,7 @@ def _parse_args():
     )
     parser.add_argument(
         "--job",
-        help="task name",
+        help="job name",
     )
     return parser.parse_args()
 

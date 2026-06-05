@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "talend_task"
 version = "0.1.2dev0"
-description = "Run Talend Cloud jobs"
+description = "CLI and Python API for running Talend Cloud jobs"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{name = "Corey Goldberg"}]

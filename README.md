@@ -1,6 +1,6 @@
 # talend-task
 
-## CLI for running ETL jobs (tasks) remotely via Talend Cloud API
+## CLI and Python API for running Talend Cloud jobs
 
 - Copyright (c) 2026 [Corey Goldberg](https://github.com/cgoldberg)
 
@@ -41,11 +41,13 @@
 
 ## About:
 
-`talend-task` is a Python CLI tool for remotely running
-[Talend](https://talend.com) ETL jobs (tasks).
+Python CLI and library for running [Talend Cloud](https://talend.com) jobs,
+including ETL pipelines, workflows, and tasks.
 
-You can specify a job to run by its name (using the `--job` argument)
-or it will list all available jobs and let you select which one to run.
+Jobs can be selected via the `--job` argument or chosen interactively from
+a list of available jobs.
+
+It also exposes a `TalendClient` class for use in Python applications.
 
 ----
 
@@ -93,7 +95,7 @@ usage: talend_task [-h] [--wait] [--job JOB]
 options:
   -h, --help  show this help message and exit
   --wait      wait for task to complete and show status
-  --job JOB   task name
+  --job JOB   job name
 ```
 
 ----
