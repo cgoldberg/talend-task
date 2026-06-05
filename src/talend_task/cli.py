@@ -51,8 +51,6 @@ def _run_job(client, job_id, wait=True):
         status = client.run(job_id, wait=True)
         stop = time.time()
         elapsed_time = _convert_time(stop - start)
-        if status != "execution_successful":
-            sys.exit(1)
         return status, elapsed_time
 
 
@@ -96,3 +94,5 @@ def main():
     if wait_enabled:
         logger.info("\nExecution finished")
         logger.info(f"Status: '{status}' (time: {elapsed_time})")
+    if status != "execution_successful":
+        sys.exit(1)
