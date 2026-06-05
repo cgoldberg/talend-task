@@ -15,12 +15,6 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 
-def _convert_time(seconds):
-    mins, secs = divmod(seconds, 60)
-    hours, mins = divmod(mins, 60)
-    return f"{hours:02.0f}:{mins:02.0f}:{secs:02.0f}"
-
-
 def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -42,6 +36,26 @@ def _require_env(name):
     return value
 
 
+def _convert_time(seconds):
+    mins, secs = divmod(seconds, 60)
+    hours, mins = divmod(mins, 60)
+    return f"{hours:02.0f}:{mins:02.0f}:{secs:02.0f}"
+
+
+def _run_job(client, job_id, wait=True):
+    if not wait:
+        status = client.run(job_id)
+        return status, None
+    else:
+        start = time.time()
+        status = client.run(job_id, wait=True)
+        stop = time.time()
+        elapsed_time = _convert_time(stop - start)
+        if status != "execution_successful":
+            sys.exit(1)
+        return status, elapsed_time
+
+
 def main():
     args = _parse_args()
     job_name = args.job
@@ -59,15 +73,7 @@ def main():
             sys.exit(f"Invalid ETL job: {job_name}")
         job_id = next(job[1] for job in jobs if job[0] == job_name)
         logger.info(f"\nExecuting job: '{job_name}' ....")
-        if wait_enabled:
-            start = time.time()
-            status = client.run(job_id, wait=True)
-            stop = time.time()
-            elapsed = _convert_time(stop - start)
-            if status != "execution_successful":
-                sys.exit(1)
-        else:
-            client.run(job_id)
+        status, elapsed_time = _run_job(client, job_id, wait=wait_enabled)
     else:
         try:
             logger.info("\nAvailable Talend Jobs:")
@@ -83,18 +89,10 @@ def main():
                 raise ValueError("Invalid job number")
             job_name, job_id = jobs[job_number - 1]
             logger.info(f"\nExecuting job: {job_name} ({job_id})\n")
-            if wait_enabled:
-                start = time.time()
-                status = client.run(job_id, progress_bar=True, wait=True)
-                stop = time.time()
-                elapsed = _convert_time(stop - start)
-                if status != "execution_successful":
-                    sys.exit(1)
-            else:
-                client.run(job_id)
+            status, elapsed_time = _run_job(client, job_id, wait=wait_enabled)
         except KeyboardInterrupt as e:
             logger.error(e)
             sys.exit(1)
     if wait_enabled:
         logger.info("\nExecution finished")
-        logger.info(f"Status: '{status}' (time: {elapsed})")
+        logger.info(f"Status: '{status}' (time: {elapsed_time})")

@@ -8,7 +8,6 @@ from datetime import datetime
 from urllib.parse import urljoin
 
 import requests
-from rich.progress import Progress, TimeElapsedColumn
 
 logger = logging.getLogger(__name__)
 
@@ -73,22 +72,11 @@ class TalendClient:
         )
         return execution_id
 
-    def run(self, job_id, progress_bar=False, wait=False, poll_interval=5):
+    def run(self, job_id, wait=False, poll_interval=5):
         status = "uknown"
         exec_id = self.run_job(job_id)
         if not wait:
             return status
-        if progress_bar:
-            columns = (*Progress.get_default_columns(), TimeElapsedColumn())
-            with Progress(*columns, transient=True) as progress:
-                task = progress.add_task("twiddling thumbs ", total=None)
-                while True:
-                    status = self.get_execution_status(exec_id)
-                    if status in ("dispatching", "executing"):
-                        time.sleep(poll_interval)
-                    else:
-                        return status
-                    progress.advance(task)
         else:
             while True:
                 status = self.get_execution_status(exec_id)
