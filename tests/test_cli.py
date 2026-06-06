@@ -174,6 +174,7 @@ def test_main_parses_args(monkeypatch):
     class Args:
         job = "job1"
         wait = True
+        debug = True
 
     fake_client = Mock(get_jobs=lambda: [("job1", "id1")])
     monkeypatch.setattr(cli, "parse_args", lambda: Args())

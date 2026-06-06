@@ -16,20 +16,6 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--wait",
-        action="store_true",
-        help="wait for task to complete and show status",
-    )
-    parser.add_argument(
-        "--job",
-        help="job name",
-    )
-    return parser.parse_args()
-
-
 def require_env(name):
     value = os.getenv(name)
     if not value:
@@ -56,15 +42,17 @@ def run_job(client, job_id, wait=True):
 
 
 def select_job(jobs, input_fn=input):
+    logger.info("\nAvailable Talend Jobs:")
+    logger.info("----------------------")
+    for num, job in enumerate(jobs, 1):
+        logger.info(f"{num}) {job[0]}")
     job_number = input_fn("\nSelect a job number to run: ")
-
     try:
         job_number = int(job_number)
         if job_number < 1 or job_number > len(jobs):
             raise ValueError()
     except ValueError:
         raise ValueError("Invalid job number")
-
     return jobs[job_number - 1]
 
 
@@ -78,44 +66,63 @@ def run_cli(
 ):
     if run_job_fn is None:
         run_job_fn = run_job
-
     if job_name:
         if job_name not in (job[0] for job in jobs):
             raise ValueError(f"Invalid job: {job_name}")
-
         job_id = next(job[1] for job in jobs if job[0] == job_name)
-
+        logger.info(f"\nExecuting job: {job_name}")
         return run_job_fn(client, job_id, wait=wait_enabled)
-
     job_name, job_id = select_job(jobs, input_fn=input_fn)
-
     return run_job_fn(client, job_id, wait=wait_enabled)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Talend Cloud CLI")
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="enable debug logging",
+    )
+    parser.add_argument(
+        "--wait",
+        action="store_true",
+        help="wait for task to complete and show status",
+    )
+    parser.add_argument(
+        "--job",
+        help="job name",
+    )
+    return parser.parse_args()
+
+
 def main():
-    args = parse_args()
-
-    load_dotenv()
-    access_token = require_env("ACCESS_TOKEN")
-    api_url = require_env("API_URL")
-
-    client = TalendClient(api_url, access_token)
-    jobs = client.get_jobs()
-
     try:
-        status, elapsed = run_cli(
-            job_name=args.job,
-            wait_enabled=args.wait,
-            client=client,
-            jobs=jobs,
-        )
-    except ValueError:
-        logger.exception("CLI failed")
-        sys.exit(1)
-
-    if args.wait:
-        logger.info("\nExecution finished")
-        logger.info(f"Status: '{status}' (time: {elapsed})")
-
-    if status != "execution_successful":
-        sys.exit(1)
+        args = parse_args()
+        level = logging.DEBUG if args.debug else logging.INFO
+        logging.basicConfig(level=level, format="%(message)s", force=True)
+        logger = logging.getLogger(__name__)
+        logger.debug("Debug logging enabled")
+        load_dotenv()
+        access_token = require_env("ACCESS_TOKEN")
+        api_url = require_env("API_URL")
+        client = TalendClient(api_url, access_token)
+        jobs = client.get_jobs()
+        try:
+            status, elapsed = run_cli(
+                job_name=args.job,
+                wait_enabled=args.wait,
+                client=client,
+                jobs=jobs,
+            )
+        except ValueError:
+            logger.exception("CLI failed")
+            sys.exit(1)
+        if args.wait:
+            logger.info("\nExecution finished")
+            logger.info(f"Status: '{status}' (time: {elapsed})")
+        if status != "execution_successful":
+            sys.exit(1)
+    except KeyboardInterrupt:
+        logger = logging.getLogger(__name__)
+        logger.info("Exiting")
+        sys.exit(130)

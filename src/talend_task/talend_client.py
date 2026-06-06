@@ -19,7 +19,7 @@ class TalendClient:
     def __init__(self, api_url, access_token):
         self.access_token = access_token
         self.base_url = urljoin(api_url, "processing")
-        self.session = requests.Session()
+        self.session = LoggedSession()
         self.session.headers.update(
             {
                 "Authorization": f"Bearer {self.access_token}",
@@ -88,3 +88,38 @@ class TalendClient:
                     time.sleep(poll_interval)
                 else:
                     return status
+
+
+class LoggedSession(requests.Session):
+    def request(self, method, url, **kwargs):
+        start = time.time()
+        resp = None
+        try:
+            resp = super().request(method, url, **kwargs)
+            elapsed_ms = (time.time() - start) * 1000
+            logger.debug(
+                "HTTP %s %s -> %s (%.1fms)",
+                method,
+                resp.url,
+                resp.status_code,
+                elapsed_ms,
+            )
+            logger.debug("Headers: %s", dict(resp.headers))
+            logger.debug("Body: %s", resp.text[:1000])
+            return resp
+        except requests.RequestException as e:
+            elapsed_ms = (time.time() - start) * 1000
+            status = getattr(resp, "status_code", None)
+            response_text = getattr(resp, "text", None)
+            response_url = getattr(resp, "url", url)
+            logger.error(
+                "HTTP FAIL %s %s -> %s (%.1fms) | error=%s | body=%s",
+                method,
+                response_url,
+                status,
+                elapsed_ms,
+                repr(e),
+                (response_text[:1000] if response_text else None),
+                exc_info=True,
+            )
+            raise
