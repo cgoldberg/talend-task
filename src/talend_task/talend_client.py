@@ -19,13 +19,7 @@ class TalendClient:
     def __init__(self, api_url, access_token):
         self.access_token = access_token
         self.base_url = urljoin(api_url, "processing")
-        self.session = LoggedSession()
-        self.session.headers.update(
-            {
-                "Authorization": f"Bearer {self.access_token}",
-                "Content-Type": "application/json",
-            }
-        )
+        self.session = AuthSession(access_token)
 
     def _get(self, path):
         resp = self.session.get(
@@ -50,10 +44,11 @@ class TalendClient:
 
     def get_job_id(self, job_name):
         result = self._get("/executables/tasks")
-        jobs = result["items"]
-        if job_name not in jobs:
+        jobs = {item["name"]: item["executable"] for item in result["items"]}
+        try:
+            return jobs[job_name]
+        except KeyError:
             raise ValueError(f"Talend job not found: {job_name}")
-        return jobs[job_name]
 
     def get_execution_status(self, execution_id):
         result = self._get(f"/executions/{execution_id}")
@@ -123,3 +118,14 @@ class LoggedSession(requests.Session):
                 exc_info=True,
             )
             raise
+
+
+class AuthSession(LoggedSession):
+    def __init__(self, access_token):
+        super().__init__()
+        self.headers.update(
+            {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+            }
+        )

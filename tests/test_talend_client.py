@@ -6,6 +6,8 @@
 
 from unittest.mock import Mock
 
+import pytest
+
 from talend_task.talend_client import TalendClient
 
 
@@ -14,7 +16,6 @@ def test_client_sets_headers():
         "https://api.example.com/",
         "abc123",
     )
-
     assert client.session.headers["Authorization"] == "Bearer abc123"
     assert client.session.headers["Content-Type"] == "application/json"
 
@@ -24,21 +25,15 @@ def test_get_calls_session_get():
         "https://api.example.com/",
         "token",
     )
-
     response = Mock()
     response.json.return_value = {"hello": "world"}
-
     client.session.get = Mock(return_value=response)
-
     result = client._get("/foo")
-
     assert result == {"hello": "world"}
-
     client.session.get.assert_called_once_with(
         "https://api.example.com/processing/foo",
         timeout=30,
     )
-
     response.raise_for_status.assert_called_once()
 
 
@@ -47,18 +42,12 @@ def test_post_calls_session_post():
         "https://api.example.com/",
         "token",
     )
-
     response = Mock()
     response.json.return_value = {"id": 123}
-
     client.session.post = Mock(return_value=response)
-
     payload = {"a": 1}
-
     result = client._post("/foo", payload)
-
     assert result == {"id": 123}
-
     client.session.post.assert_called_once_with(
         "https://api.example.com/processing/foo",
         json=payload,
@@ -71,7 +60,6 @@ def test_get_jobs_returns_name_and_executable_pairs():
         "https://api.example.com/",
         "token",
     )
-
     client._get = Mock(
         return_value={
             "items": [
@@ -81,16 +69,56 @@ def test_get_jobs_returns_name_and_executable_pairs():
                 },
                 {
                     "name": "job2",
-                    "executable": "def",
+                    "executable": "xyz",
                 },
             ]
         }
     )
-
     assert client.get_jobs() == [
         ("job1", "abc"),
-        ("job2", "def"),
+        ("job2", "xyz"),
     ]
+
+
+def test_get_job_id_returns_executable():
+    client = TalendClient(
+        "https://api.example.com/",
+        "token",
+    )
+    client._get = Mock(
+        return_value={
+            "items": [
+                {
+                    "name": "job1",
+                    "executable": "abc",
+                },
+                {
+                    "name": "job2",
+                    "executable": "xyz",
+                },
+            ]
+        }
+    )
+    assert client.get_job_id("job2") == "xyz"
+
+
+def test_get_job_id_raises_when_missing():
+    client = TalendClient(
+        "https://api.example.com/",
+        "token",
+    )
+    client._get = Mock(
+        return_value={
+            "items": [
+                {
+                    "name": "job1",
+                    "executable": "abc",
+                }
+            ]
+        }
+    )
+    with pytest.raises(ValueError, match="Talend job not found"):
+        client.get_job_id("job2")
 
 
 def test_get_execution_status():
@@ -98,11 +126,8 @@ def test_get_execution_status():
         "https://api.example.com/",
         "token",
     )
-
     client._get = Mock(return_value={"status": "executing"})
-
     assert client.get_execution_status("exec-123") == "executing"
-
     client._get.assert_called_once_with("/executions/exec-123")
 
 
@@ -111,13 +136,9 @@ def test_run_job_returns_execution_id():
         "https://api.example.com/",
         "token",
     )
-
     client._post = Mock(return_value={"executionId": "exec-123"})
-
     result = client.run_job("job-456")
-
     assert result == "exec-123"
-
     client._post.assert_called_once_with(
         "/executions",
         {"executable": "job-456"},
@@ -129,11 +150,8 @@ def test_run_without_wait_returns_unknown_status():
         "https://api.example.com/",
         "token",
     )
-
     client.run_job = Mock(return_value="exec-123")
-
     result = client.run("job-456")
-
     assert result == "unknown"
 
 
@@ -142,9 +160,7 @@ def test_run_waits_until_completion(monkeypatch):
         "https://api.example.com/",
         "token",
     )
-
     client.run_job = Mock(return_value="exec-123")
-
     statuses = iter(
         [
             "dispatching",
@@ -153,20 +169,16 @@ def test_run_waits_until_completion(monkeypatch):
             "completed",
         ]
     )
-
     client.get_execution_status = Mock(side_effect=lambda _: next(statuses))
-
     sleep = Mock()
     monkeypatch.setattr(
         "talend_task.talend_client.time.sleep",
         sleep,
     )
-
     result = client.run(
         "job-456",
         wait=True,
         poll_interval=1,
     )
-
     assert result == "completed"
     assert sleep.call_count == 3
