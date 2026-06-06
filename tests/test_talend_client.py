@@ -6,8 +6,6 @@
 
 from unittest.mock import Mock
 
-import pytest
-
 from talend_task.talend_client import TalendClient
 
 
@@ -78,47 +76,6 @@ def test_get_jobs_returns_name_and_executable_pairs():
         ("job1", "abc"),
         ("job2", "xyz"),
     ]
-
-
-def test_get_job_id_returns_executable():
-    client = TalendClient(
-        "https://api.example.com/",
-        "token",
-    )
-    client._get = Mock(
-        return_value={
-            "items": [
-                {
-                    "name": "job1",
-                    "executable": "abc",
-                },
-                {
-                    "name": "job2",
-                    "executable": "xyz",
-                },
-            ]
-        }
-    )
-    assert client.get_job_id("job2") == "xyz"
-
-
-def test_get_job_id_raises_when_missing():
-    client = TalendClient(
-        "https://api.example.com/",
-        "token",
-    )
-    client._get = Mock(
-        return_value={
-            "items": [
-                {
-                    "name": "job1",
-                    "executable": "abc",
-                }
-            ]
-        }
-    )
-    with pytest.raises(ValueError, match="Talend job not found"):
-        client.get_job_id("job2")
 
 
 def test_get_execution_status():

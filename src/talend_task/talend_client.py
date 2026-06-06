@@ -42,14 +42,6 @@ class TalendClient:
         result = self._get("/executables/tasks")
         return [(item["name"], item["executable"]) for item in result["items"]]
 
-    def get_job_id(self, job_name):
-        result = self._get("/executables/tasks")
-        jobs = {item["name"]: item["executable"] for item in result["items"]}
-        try:
-            return jobs[job_name]
-        except KeyError:
-            raise ValueError(f"Talend job not found: {job_name}")
-
     def get_execution_status(self, execution_id):
         result = self._get(f"/executions/{execution_id}")
         status = result["status"]
