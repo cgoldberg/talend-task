@@ -34,9 +34,9 @@ def run_job(client, job_id, poll_interval, wait=True):
         status = client.run(job_id)
         return status, None
     else:
-        start = time.time()
+        start = time.monotonic()
         status = client.run(job_id, poll_interval=poll_interval, wait=True)
-        stop = time.time()
+        stop = time.monotonic()
         elapsed_time = convert_time(stop - start)
         return status, elapsed_time
 

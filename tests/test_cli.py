@@ -52,7 +52,7 @@ def test_run_job_wait(monkeypatch):
     client.run.return_value = "execution_successful"
     times = iter([100.0, 165.0])
     monkeypatch.setattr(
-        "talend_task.cli.time.time",
+        "talend_task.cli.time.monotonic",
         lambda: next(times),
     )
     status, elapsed = cli.run_job(
