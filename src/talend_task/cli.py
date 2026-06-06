@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 
 from .talend_client import TalendClient
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -120,13 +119,14 @@ def parse_args(argv=None):
 def main():
     try:
         args = parse_args()
+        logging.basicConfig(
+            level=logging.DEBUG if args.debug else logging.INFO,
+            format="%(message)s",
+            force=True,
+        )
         if args.poll_interval is not None and not args.wait:
-            logger = logging.getLogger(__name__)
             logger.error("Error: --poll-interval requires --wait")
             sys.exit(1)
-        level = logging.DEBUG if args.debug else logging.INFO
-        logging.basicConfig(level=level, format="%(message)s", force=True)
-        logger = logging.getLogger(__name__)
         load_dotenv()
         access_token = require_env("ACCESS_TOKEN")
         api_url = require_env("API_URL")
@@ -145,10 +145,8 @@ def main():
         if status != "execution_successful":
             sys.exit(1)
     except ValueError as e:
-        logger = logging.getLogger(__name__)
-        logger.error(f"Error: {e}")
+        logger.error("Error: %s", e)
         sys.exit(1)
     except KeyboardInterrupt:
-        logger = logging.getLogger(__name__)
         logger.info("Exiting")
         sys.exit(130)
