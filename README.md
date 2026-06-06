@@ -112,16 +112,16 @@ Launch the CLI to select a job to run:
 talend_task
 ```
 
-Run a job named "MyJob":
+Run a job named "Job1":
 
 ```
-talend_task --job MyJob
+talend_task --job Job1
 ```
 
-Run a job named "MyJob" and wait (poll) until the job completes:
+Run a job named "Job1" and wait (poll) until the job completes:
 
 ```
-talend_task --wait --job MyJob
+talend_task --wait --job Job1
 ```
 
 [github-profile]: https://github.com/cgoldberg
