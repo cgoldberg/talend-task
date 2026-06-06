@@ -124,4 +124,4 @@ talend_task --wait --job MyJob
 [github-profile]: https://github.com/cgoldberg
 [github-repo]: https://github.com/cgoldberg/talend-task
 [pypi-home]: https://pypi.org/project/talend-task
-[mit-license]: https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/master/LICENSE
+[mit-license]: https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/main/LICENSE
