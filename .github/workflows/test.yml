@@ -28,18 +28,16 @@ jobs:
           pip install tox
       - name: Validate project configuration
         run: |
-            tox
+          tox
         env:
           TOXENV: validate
       - name: Run linter and formatter
         run: |
-            tox
+          tox
         env:
           TOXENV: lint
+      - name: Run tests
         run: |
           tox
-      - name: Run tests
         env:
           TOXENV: ${{ matrix.toxenv }}
-        run: |
-          tox
