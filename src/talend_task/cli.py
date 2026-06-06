@@ -117,6 +117,12 @@ def parse_args(argv=None):
 
 
 def main():
+    args = parse_args()
+    logging.basicConfig(
+        level=logging.DEBUG if args.debug else logging.INFO,
+        format="%(message)s",
+        force=True,
+    )
     try:
         args = parse_args()
         logging.basicConfig(
