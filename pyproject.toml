@@ -49,6 +49,7 @@ test = [
 validate = [
     "packaging",
     "validate-pyproject",
+    "tomli; python_version < '3.11'",
 ]
 
 [tool.setuptools]
