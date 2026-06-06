@@ -86,7 +86,7 @@ def parse_args():
     parser.add_argument(
         "--wait",
         action="store_true",
-        help="wait for task to complete and show status",
+        help="wait for job to complete and show status",
     )
     parser.add_argument(
         "--job",

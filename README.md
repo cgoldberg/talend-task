@@ -98,13 +98,13 @@ Talend Cloud CLI
 options:
   -h, --help  show this help message and exit
   --debug     enable debug logging
-  --wait      wait for task to complete and show status
+  --wait      wait for job to complete and show status
   --job JOB   job name
 ```
 
 ----
 
-## Usage Examples:
+## CLI Usage Examples:
 
 Launch the CLI to select a job to run:
 
