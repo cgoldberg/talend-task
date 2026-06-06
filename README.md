@@ -2,37 +2,38 @@
 
 ## CLI and Python API for running Talend Cloud jobs
 
-- Copyright (c) 2026 [Corey Goldberg](https://github.com/cgoldberg)
+- Copyright (c) 2026 [Corey Goldberg][github-profile]
+- Development: [GitHub][github-repo]
+- Releases: [PyPI][pypi-home]
+- License: [MIT][mit-license]
+
+----
+
+## Status
 
 <table>
   <tr>
-    <td>Development</td>
-    <td>
-      <a href="https://github.com/cgoldberg/talend-task">
-        GitHub
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <td>License</td>
-    <td>
-      <a href="https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/master/LICENSE">
-        MIT
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <td>Releases</td>
+    <td>Latest Version</td>
     <td>
       <a href="https://pypi.org/project/talend-task">
-        PyPI
+        <img src="https://img.shields.io/pypi/v/talend-task.svg">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td>Build/Tests (CI)</td>
+    <td>
+      <a href="https://github.com/cgoldberg/talend-task/actions/workflows/test.yml">
+        <img src="https://github.com/cgoldberg/talend-task/actions/workflows/test.yml/badge.svg">
       </a>
     </td>
   </tr>
   <tr>
     <td>Supported Python Versions</td>
     <td>
-      3.10+
+      <a href="https://pypi.org/project/talend-task">
+        <img src="https://img.shields.io/pypi/pyversions/talend-task">
+      </a>
     </td>
   </tr>
 </table>
@@ -41,7 +42,7 @@
 
 ## About:
 
-Python CLI and library for running [Talend Cloud](https://talend.com) jobs,
+`talend_task` is a Python CLI for running [Talend Cloud](https://talend.com) jobs,
 including ETL pipelines, workflows, and tasks.
 
 Jobs can be selected via the `--job` argument or chosen interactively from
@@ -53,7 +54,7 @@ It also exposes a `TalendClient` class for use in Python applications.
 
 ## Installation:
 
-#### Install from [PyPI](https://pypi.org/project/talend-task):
+#### Install from [PyPI][pypi-home]:
 
 ```
 pip install talend-task
@@ -119,3 +120,8 @@ Run a job named "MyJob" and wait (poll) until the job completes:
 ```
 talend_task --wait --job MyJob
 ```
+
+[github-profile]: https://github.com/cgoldberg
+[github-repo]: https://github.com/cgoldberg/talend-task
+[pypi-home]: https://pypi.org/project/talend-task
+[mit-license]: https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/master/LICENSE
