@@ -2,8 +2,6 @@
 # License: MIT
 
 
-"""Tests for talend_task TalendClient."""
-
 from unittest.mock import Mock
 
 from talend_task.talend_client import TalendClient

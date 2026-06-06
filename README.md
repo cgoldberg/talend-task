@@ -1,6 +1,6 @@
 # talend-task
 
-## CLI and Python API for running Talend Cloud jobs
+## CLI for running Talend Cloud jobs
 
 - Copyright (c) 2026 [Corey Goldberg][github-profile]
 - Development: [GitHub][github-repo]
@@ -47,8 +47,6 @@ including ETL pipelines, workflows, and tasks.
 
 Jobs can be selected via the `--job` argument or chosen interactively from
 a list of available jobs.
-
-It also exposes a `TalendClient` class for use in Python applications.
 
 ----
 

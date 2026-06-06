@@ -2,8 +2,6 @@
 # License: MIT
 
 
-"""Tests for talend_task CLI."""
-
 from unittest.mock import Mock
 
 import pytest
