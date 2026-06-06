@@ -91,10 +91,13 @@ ACCESS_TOKEN=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 ```
 $ talend_task --help
-usage: talend_task [-h] [--wait] [--job JOB]
+usage: talend_task [-h] [--debug] [--wait] [--job JOB]
+
+Talend Cloud CLI
 
 options:
   -h, --help  show this help message and exit
+  --debug     enable debug logging
   --wait      wait for task to complete and show status
   --job JOB   job name
 ```
