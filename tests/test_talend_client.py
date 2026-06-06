@@ -2,7 +2,9 @@
 # License: MIT
 
 
-from unittest.mock import Mock
+from unittest.mock import Mock, call
+
+import pytest
 
 from talend_task.talend_client import TalendClient
 
@@ -136,4 +138,62 @@ def test_run_waits_until_completion(monkeypatch):
         poll_interval=1,
     )
     assert result == "completed"
-    assert sleep.call_count == 3
+    assert sleep.call_args_list == [call(1)] * 3
+
+
+def test_run_uses_default_poll_interval(monkeypatch):
+    client = TalendClient(
+        "https://api.example.com/",
+        "token",
+    )
+    client.run_job = Mock(return_value="exec-123")
+    statuses = iter(
+        [
+            "executing",
+            "completed",
+        ]
+    )
+    client.get_execution_status = Mock(side_effect=lambda _: next(statuses))
+    sleep = Mock()
+    monkeypatch.setattr(
+        "talend_task.talend_client.time.sleep",
+        sleep,
+    )
+    result = client.run(
+        "job-456",
+        wait=True,
+        poll_interval=None,
+    )
+    assert result == "completed"
+    sleep.assert_called_once_with(5)
+
+
+def test_run_times_out(monkeypatch):
+    client = TalendClient(
+        "https://api.example.com/",
+        "token",
+    )
+    client.run_job = Mock(return_value="exec-123")
+    client.get_execution_status = Mock(return_value="executing")
+    monkeypatch.setattr(
+        "talend_task.talend_client.time.sleep",
+        lambda _: None,
+    )
+    monotonic_values = iter(
+        [
+            0.0,
+            0.5,
+            2.0,
+        ]
+    )
+    monkeypatch.setattr(
+        "talend_task.talend_client.time.monotonic",
+        lambda: next(monotonic_values),
+    )
+    with pytest.raises(TimeoutError, match="did not complete within"):
+        client.run(
+            "job-456",
+            wait=True,
+            poll_interval=1,
+            timeout=1,
+        )

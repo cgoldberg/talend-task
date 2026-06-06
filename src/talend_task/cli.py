@@ -29,13 +29,13 @@ def convert_time(seconds):
     return f"{hours:02.0f}:{mins:02.0f}:{secs:02.0f}"
 
 
-def run_job(client, job_id, wait=True):
+def run_job(client, job_id, poll_interval, wait=True):
     if not wait:
         status = client.run(job_id)
         return status, None
     else:
         start = time.time()
-        status = client.run(job_id, wait=True)
+        status = client.run(job_id, poll_interval=poll_interval, wait=True)
         stop = time.time()
         elapsed_time = convert_time(stop - start)
         return status, elapsed_time
@@ -58,7 +58,8 @@ def select_job(jobs, input_fn=input):
 
 def run_cli(
     job_name,
-    wait_enabled,
+    wait,
+    poll_interval,
     client,
     jobs,
     input_fn=input,
@@ -71,13 +72,24 @@ def run_cli(
             raise ValueError(f"Invalid job: {job_name}")
         job_id = next(job[1] for job in jobs if job[0] == job_name)
         logger.info(f"\nExecuting job: {job_name}")
-        return run_job_fn(client, job_id, wait=wait_enabled)
+        return run_job_fn(client, job_id, poll_interval=poll_interval, wait=wait)
     job_name, job_id = select_job(jobs, input_fn=input_fn)
-    return run_job_fn(client, job_id, wait=wait_enabled)
+    return run_job_fn(client, job_id, poll_interval=poll_interval, wait=wait)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Talend Cloud CLI")
+def create_parser():
+    def formatter(prog):
+        return argparse.HelpFormatter(
+            prog,
+            width=100,
+            max_help_position=35,
+        )
+
+    parser = argparse.ArgumentParser(
+        description="Talend Cloud CLI",
+        formatter_class=formatter,
+    )
+
     parser.add_argument(
         "--debug",
         action="store_true",
@@ -92,36 +104,51 @@ def parse_args():
         "--job",
         help="job name",
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--poll-interval",
+        default=None,
+        type=int,
+        help="polling interval in seconds (requires --wait) (default: 5)",
+    )
+    return parser
+
+
+def parse_args(argv=None):
+    parser = create_parser()
+    return parser.parse_args(argv)
 
 
 def main():
     try:
         args = parse_args()
+        if args.poll_interval is not None and not args.wait:
+            logger = logging.getLogger(__name__)
+            logger.error("Error: --poll-interval requires --wait")
+            sys.exit(1)
         level = logging.DEBUG if args.debug else logging.INFO
         logging.basicConfig(level=level, format="%(message)s", force=True)
         logger = logging.getLogger(__name__)
-        logger.debug("Debug logging enabled")
         load_dotenv()
         access_token = require_env("ACCESS_TOKEN")
         api_url = require_env("API_URL")
         client = TalendClient(api_url, access_token)
         jobs = client.get_jobs()
-        try:
-            status, elapsed = run_cli(
-                job_name=args.job,
-                wait_enabled=args.wait,
-                client=client,
-                jobs=jobs,
-            )
-        except ValueError:
-            logger.exception("CLI failed")
-            sys.exit(1)
+        status, elapsed = run_cli(
+            job_name=args.job,
+            wait=args.wait,
+            poll_interval=args.poll_interval,
+            client=client,
+            jobs=jobs,
+        )
         if args.wait:
             logger.info("\nExecution finished")
             logger.info(f"Status: '{status}' (time: {elapsed})")
         if status != "execution_successful":
             sys.exit(1)
+    except ValueError as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error: {e}")
+        sys.exit(1)
     except KeyboardInterrupt:
         logger = logging.getLogger(__name__)
         logger.info("Exiting")

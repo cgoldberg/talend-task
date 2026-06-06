@@ -4,7 +4,6 @@
 
 import logging
 import time
-from datetime import datetime
 from urllib.parse import urljoin
 
 import requests
@@ -13,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 HTTP_TIMEOUT = 30
+JOB_TIMEOUT = 3600
 
 
 class TalendClient:
@@ -60,30 +60,32 @@ class TalendClient:
         )
         return execution_id
 
-    def run(self, job_id, wait=False, poll_interval=5):
+    def run(self, job_id, wait=False, poll_interval=None, timeout=JOB_TIMEOUT):
+        poll_interval = poll_interval if poll_interval is not None else 5
         status = "unknown"
         exec_id = self.run_job(job_id)
         if not wait:
             return status
-        else:
-            while True:
-                status = self.get_execution_status(exec_id)
-                logger.info(
-                    f"Status: {status} ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})"
+        pending_statuses = {"dispatching", "executing"}
+        start = time.monotonic()
+        while True:
+            status = self.get_execution_status(exec_id)
+            if status not in pending_statuses:
+                return status
+            if time.monotonic() - start >= timeout:
+                raise TimeoutError(
+                    f"Job {job_id} did not complete within {timeout} seconds"
                 )
-                if status in ("dispatching", "executing"):
-                    time.sleep(poll_interval)
-                else:
-                    return status
+            time.sleep(poll_interval)
 
 
 class LoggedSession(requests.Session):
     def request(self, method, url, **kwargs):
-        start = time.time()
+        start = time.monotonic()
         resp = None
         try:
             resp = super().request(method, url, **kwargs)
-            elapsed_ms = (time.time() - start) * 1000
+            elapsed_ms = (time.monotonic() - start) * 1000
             logger.debug(
                 "HTTP %s %s -> %s (%.1fms)",
                 method,
@@ -95,7 +97,7 @@ class LoggedSession(requests.Session):
             logger.debug("Body: %s", resp.text[:1000])
             return resp
         except requests.RequestException as e:
-            elapsed_ms = (time.time() - start) * 1000
+            elapsed_ms = (time.monotonic() - start) * 1000
             status = getattr(resp, "status_code", None)
             response_text = getattr(resp, "text", None)
             response_url = getattr(resp, "url", url)
