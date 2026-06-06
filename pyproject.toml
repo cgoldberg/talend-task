@@ -31,12 +31,6 @@ dependencies = [
 [project.scripts]
 talend_task = "talend_task.cli:main"
 
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
 [project.urls]
 homepage = "https://github.com/cgoldberg/talend-task"
 source = "https://github.com/cgoldberg/talend-task"
@@ -49,10 +43,23 @@ dev = [
 lint = [
     "ruff",
 ]
+test = [
+    "pytest",
+]
 validate = [
     "packaging",
     "validate-pyproject",
 ]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest]
+addopts = ["-v"]
+testpaths = ["tests"]
 
 [tool.black]
 line-length = 88

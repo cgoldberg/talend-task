@@ -49,7 +49,8 @@ class TalendClient:
         return [(item["name"], item["executable"]) for item in result["items"]]
 
     def get_job_id(self, job_name):
-        jobs = self.get_jobs()
+        result = self._get("/executables/tasks")
+        jobs = result["items"]
         if job_name not in jobs:
             raise ValueError(f"Talend job not found: {job_name}")
         return jobs[job_name]
@@ -73,7 +74,7 @@ class TalendClient:
         return execution_id
 
     def run(self, job_id, wait=False, poll_interval=5):
-        status = "uknown"
+        status = "unknown"
         exec_id = self.run_job(job_id)
         if not wait:
             return status
