@@ -89,7 +89,6 @@ def create_parser():
         description="Talend Cloud CLI",
         formatter_class=formatter,
     )
-
     parser.add_argument(
         "--debug",
         action="store_true",
