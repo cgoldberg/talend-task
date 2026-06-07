@@ -44,7 +44,7 @@ def select_job(jobs, input_fn=input):
     logger.info("\nAvailable Talend Jobs:")
     logger.info("----------------------")
     for num, job in enumerate(jobs, 1):
-        logger.info(f"{num}) {job[0]}")
+        logger.info("%s %s", num, job[0])
     job_number = input_fn("\nSelect a job number to run: ")
     try:
         job_number = int(job_number)
@@ -70,9 +70,10 @@ def run_cli(
         if job_name not in (job[0] for job in jobs):
             raise ValueError(f"Invalid job: {job_name}")
         job_id = next(job[1] for job in jobs if job[0] == job_name)
-        logger.info(f"\nExecuting job: {job_name}")
+        logger.info("\nExecuting job: %s", job_name)
         return run_job_fn(client, job_id, poll_interval=poll_interval, wait=wait)
     job_name, job_id = select_job(jobs, input_fn=input_fn)
+    logger.info("\nExecuting job: %s", job_name)
     return run_job_fn(client, job_id, poll_interval=poll_interval, wait=wait)
 
 
@@ -120,16 +121,11 @@ def main():
     args = parse_args()
     logging.basicConfig(
         level=logging.DEBUG if args.debug else logging.INFO,
-        format="%(message)s",
+        format="%(message)s (%(asctime)s)",
+        datefmt="%Y-%m-%d %H:%M:%S",
         force=True,
     )
     try:
-        args = parse_args()
-        logging.basicConfig(
-            level=logging.DEBUG if args.debug else logging.INFO,
-            format="%(message)s",
-            force=True,
-        )
         if args.poll_interval is not None and not args.wait:
             logger.error("Error: --poll-interval requires --wait")
             sys.exit(1)
@@ -147,7 +143,7 @@ def main():
         )
         if args.wait:
             logger.info("\nExecution finished")
-            logger.info(f"Status: '{status}' (time: {elapsed})")
+            logger.info("Status: '%s' (duration: %s)", status, elapsed)
         if status != "execution_successful":
             sys.exit(1)
     except ValueError as e:

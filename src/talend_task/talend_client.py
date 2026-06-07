@@ -4,6 +4,7 @@
 
 import logging
 import time
+from datetime import datetime
 from urllib.parse import urljoin
 
 import requests
@@ -70,6 +71,10 @@ class TalendClient:
         start = time.monotonic()
         while True:
             status = self.get_execution_status(exec_id)
+            logger.info(
+                f"Status: %s",
+                status,
+            )
             if status not in pending_statuses:
                 return status
             if time.monotonic() - start >= timeout:
