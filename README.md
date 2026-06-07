@@ -104,19 +104,24 @@ options:
 
 ### CLI Usage Examples
 
-Launch the CLI and select a job from the menu:
+##### Interactive mode
+
+Run the CLI with no job specified. Presents a menu to select and execute a job:
 
 ```
 talend_task
 ```
 
-Run a job named "Job1":
+##### Direct mode
+
+Provide `--job <name>` to execute a job immediately, bypassing the menu:
 
 ```
 talend_task --job Job1
 ```
 
-Run a job named "Job1" and wait (poll) until the job completes:
+Optionally use `--wait` to poll until the job completes and return its final
+status:
 
 ```
 talend_task --wait --job Job1
@@ -124,9 +129,22 @@ talend_task --wait --job Job1
 
 ----
 
+### Screenshots
+
+##### Interactive mode
+
+![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/main/screenshots/screenshot-terminal-interactive-mode)
+
+##### Direct mode
+
+![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/main/screenshots/screenshot-terminal-direct-mode)
+
+----
+
 ### Development
 
-- Install as editable package with all required development/testing dependencies:
+- Install as editable package with all required development/testing
+  dependencies:
 
     ```
     pip install --editable --group dev --group test .
