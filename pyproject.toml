@@ -12,7 +12,17 @@ authors = [{name = "Corey Goldberg"}]
 maintainers = [{name = "Corey Goldberg"}]
 readme = "README.md"
 requires-python = ">=3.10"
-keywords = ["talend", "etl", "pipeline", "cli"]
+keywords = [
+    "talend",
+    "talend-cloud",
+    "etl",
+    "pipeline",
+    "cli",
+    "api",
+    "jobs",
+    "orchestration",
+    "automation",
+]
 classifiers = [
     "Environment :: Console",
     "Programming Language :: Python",
