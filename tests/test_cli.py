@@ -231,6 +231,21 @@ def test_main_rejects_poll_interval_without_wait(monkeypatch):
     assert exc.value.code == 1
 
 
+def test_main_keyboard_interrupt(monkeypatch):
+    def boom(**kwargs):
+        raise KeyboardInterrupt()
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["prog", "--job", "job1"],
+    )
+    monkeypatch.setattr(cli, "run_cli", boom)
+    with pytest.raises(SystemExit) as exc:
+        cli.main()
+    assert exc.value.code == 130
+
+
 def test_parse_args_defaults_without_optional_flags():
     args = cli.parse_args(["--job", "job1"])
     assert args.job == "job1"
