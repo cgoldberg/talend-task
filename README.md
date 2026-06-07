@@ -9,7 +9,7 @@
 
 ----
 
-## Status
+### Status
 
 <table>
   <tr>
@@ -40,7 +40,7 @@
 
 ----
 
-## About:
+### About
 
 `talend_task` is a Python CLI for running [Talend Cloud](https://talend.com) jobs,
 including ETL pipelines, workflows, and tasks.
@@ -50,9 +50,9 @@ a list of available jobs.
 
 ----
 
-## Installation:
+### Installation
 
-#### Install from [PyPI][pypi-home]:
+Install from [PyPI][pypi-home]:
 
 ```
 pip install talend-task
@@ -60,7 +60,7 @@ pip install talend-task
 
 ----
 
-## Configuration:
+### Configuration
 
 You need to configure an Access Token (generated in
 [Talend Management Console](https://help.qlik.com/talend/management-console-user-guide))
@@ -85,7 +85,7 @@ ACCESS_TOKEN=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 ----
 
-## CLI Options:
+### CLI Options
 
 ```
 $ talend_task -h
@@ -103,7 +103,7 @@ options:
 
 ----
 
-## CLI Usage Examples:
+### CLI Usage Examples
 
 Launch the CLI to select a job to run:
 
@@ -122,6 +122,58 @@ Run a job named "Job1" and wait (poll) until the job completes:
 ```
 talend_task --wait --job Job1
 ```
+
+----
+
+### Development
+
+- Install as editable package with all required development/testing dependencies:
+
+    ```
+    pip install --editable --group dev --group test .
+    ```
+
+- Run all tests in the default Python environment:
+
+    ```
+    pytest
+    ```
+
+- Run linting and formatting:
+
+    ```
+    tox -e lint
+    ```
+
+- Run validation, linting, formatting, and all tests across all
+  supported/installed Python environments:
+
+    ```
+    tox
+    ```
+
+### Project Structure
+
+```
+./
+├── .github/
+│   └── workflows/
+│       └── test.yml
+├── src/
+│   └── talend_task/
+│       ├── __init__.py
+│       ├── cli.py
+│       └── talend_client.py
+├── tests/
+│   ├── test_cli.py
+│   └── test_talend_client.py
+├── .gitignore
+├── LICENSE
+├── README.md
+├── pyproject.toml
+└── tox.ini
+```
+
 
 [github-profile]: https://github.com/cgoldberg
 [github-repo]: https://github.com/cgoldberg/talend-task
