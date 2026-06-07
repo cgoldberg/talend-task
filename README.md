@@ -133,11 +133,11 @@ talend_task --wait --job Job1
 
 ##### Interactive mode
 
-![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/main/screenshots/screenshot-terminal-interactive-mode)
+![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/main/screenshots/screenshot-terminal-interactive-mode.png)
 
 ##### Direct mode
 
-![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/main/screenshots/screenshot-terminal-direct-mode)
+![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/main/screenshots/screenshot-terminal-direct-mode.png)
 
 ----
 
