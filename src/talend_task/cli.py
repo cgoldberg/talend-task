@@ -100,7 +100,6 @@ def run_cli(
         poll_interval=poll_interval,
         wait=wait,
     )
-    console.print()
     if wait:
         console.print(
             Panel.fit(
