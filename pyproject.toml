@@ -20,7 +20,6 @@ keywords = [
     "cli",
     "api",
     "jobs",
-    "orchestration",
     "automation",
 ]
 classifiers = [
