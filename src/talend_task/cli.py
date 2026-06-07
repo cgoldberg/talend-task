@@ -32,18 +32,6 @@ def convert_time(seconds):
     return f"{hours:02.0f}:{mins:02.0f}:{secs:02.0f}"
 
 
-def run_job(client, job_id, poll_interval, wait=True):
-    if not wait:
-        status = client.run(job_id)
-        return status, None
-    else:
-        start = time.monotonic()
-        status = client.run(job_id, poll_interval=poll_interval, wait=True)
-        stop = time.monotonic()
-        elapsed_time = convert_time(stop - start)
-        return status, elapsed_time
-
-
 def select_job(jobs, input_fn=input):
     console.print()
     table = Table(title="[bold]Talend Cloud Jobs[/bold]")
@@ -62,21 +50,16 @@ def select_job(jobs, input_fn=input):
     return jobs[job_number - 1]
 
 
-"""
-def select_job(jobs, input_fn=input):
-    logger.info("\nAvailable Talend Jobs:")
-    logger.info("----------------------")
-    for num, job in enumerate(jobs, 1):
-        logger.info("%s %s", num, job[0])
-    job_number = input_fn("\nSelect a job number to run: ")
-    try:
-        job_number = int(job_number)
-        if job_number < 1 or job_number > len(jobs):
-            raise ValueError()
-    except ValueError:
-        raise ValueError("Invalid job number")
-    return jobs[job_number - 1]
-"""
+def run_job(client, job_id, poll_interval, wait=True):
+    if not wait:
+        status = client.run(job_id)
+        return status, None
+    else:
+        start = time.monotonic()
+        status = client.run(job_id, poll_interval=poll_interval, wait=True)
+        stop = time.monotonic()
+        elapsed_time = convert_time(stop - start)
+        return status, elapsed_time
 
 
 def run_cli(
@@ -184,6 +167,7 @@ def main():
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         force=True,
+        stream=sys.stdout,
     )
     try:
         if args.poll_interval is not None and not args.wait:
