@@ -84,6 +84,7 @@ def run_cli(
             poll_interval=poll_interval,
             wait=wait,
         )
+        logger.info("Duration: %s", elapsed_time)
         return status
     job_name, job_id = select_job(jobs, input_fn=input_fn)
     console.print()
