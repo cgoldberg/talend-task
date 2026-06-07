@@ -150,7 +150,8 @@ def create_parser():
         "--poll-interval",
         default=None,
         type=int,
-        help="polling interval in seconds (requires --wait) (default: 5)",
+        metavar="SECS",
+        help="polling interval (requires --wait) (default: 5)",
     )
     return parser
 

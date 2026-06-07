@@ -89,16 +89,16 @@ ACCESS_TOKEN=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 ```
 $ talend_task -h
-usage: talend_task [-h] [--debug] [--wait] [--job JOB] [--poll-interval POLL_INTERVAL]
+usage: talend_task [-h] [--debug] [--wait] [--job JOB] [--poll-interval SECS]
 
 Talend Cloud CLI
 
 options:
-  -h, --help                     show this help message and exit
-  --debug                        enable debug logging
-  --wait                         wait for job to complete and show status
-  --job JOB                      job name
-  --poll-interval POLL_INTERVAL  polling interval in seconds (requires --wait) (default: 5)
+  -h, --help            show this help message and exit
+  --debug               enable debug logging
+  --wait                wait for job to complete and show status
+  --job JOB             job name
+  --poll-interval SECS  polling interval (requires --wait) (default: 5)
 ```
 
 ----
