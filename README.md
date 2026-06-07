@@ -167,9 +167,6 @@ talend_task --wait --job Job1
 ├── tests/
 │   ├── test_cli.py
 │   └── test_talend_client.py
-├── .gitignore
-├── LICENSE
-├── README.md
 ├── pyproject.toml
 └── tox.ini
 ```
