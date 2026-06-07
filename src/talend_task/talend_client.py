@@ -4,7 +4,6 @@
 
 import logging
 import time
-from datetime import datetime
 from urllib.parse import urljoin
 
 import requests
@@ -54,8 +53,8 @@ class TalendClient:
             {"executable": job_id},
         )
         execution_id = result["executionId"]
-        logging.info(
-            "Talend job submitted: %s, executionId=%s",
+        logger.info(
+            "Job submitted\n    jobId       : %s\n    executionId : %s",
             job_id,
             execution_id,
         )
@@ -72,7 +71,7 @@ class TalendClient:
         while True:
             status = self.get_execution_status(exec_id)
             logger.info(
-                f"Status: %s",
+                "Status: %s",
                 status,
             )
             if status not in pending_statuses:

@@ -36,14 +36,14 @@ def test_convert_time(seconds, expected):
 def test_run_job_no_wait():
     client = Mock()
     client.run.return_value = "submitted"
-    status, elapsed = cli.run_job(
+    status, elapsed_time = cli.run_job(
         client,
         "job123",
         wait=False,
         poll_interval=None,
     )
     assert status == "submitted"
-    assert elapsed is None
+    assert elapsed_time is None
     client.run.assert_called_once_with("job123")
 
 
@@ -55,14 +55,14 @@ def test_run_job_wait(monkeypatch):
         "talend_task.cli.time.monotonic",
         lambda: next(times),
     )
-    status, elapsed = cli.run_job(
+    status, elapsed_time = cli.run_job(
         client,
         "job123",
         wait=True,
         poll_interval=5,
     )
     assert status == "execution_successful"
-    assert elapsed == "00:01:05"
+    assert elapsed_time == "00:01:05"
 
 
 def test_run_cli_named_job_success():
@@ -72,7 +72,7 @@ def test_run_cli_named_job_success():
         ("job2", "id2"),
     ]
     run_job_mock = Mock(return_value=("execution_successful", None))
-    status, elapsed = cli.run_cli(
+    status = cli.run_cli(
         job_name="job2",
         wait=False,
         poll_interval=None,
@@ -81,7 +81,6 @@ def test_run_cli_named_job_success():
         run_job_fn=run_job_mock,
     )
     assert status == "execution_successful"
-    assert elapsed is None
     run_job_mock.assert_called_once_with(
         client,
         "id2",
@@ -97,7 +96,7 @@ def test_run_cli_named_job_fail():
         ("job2", "id2"),
     ]
     run_job_mock = Mock(return_value=("execution_failed", None))
-    status, elapsed = cli.run_cli(
+    status = cli.run_cli(
         job_name="job1",
         wait=False,
         poll_interval=None,
@@ -106,7 +105,6 @@ def test_run_cli_named_job_fail():
         run_job_fn=run_job_mock,
     )
     assert status == "execution_failed"
-    assert elapsed is None
     run_job_mock.assert_called_once_with(
         client,
         "id1",
@@ -140,7 +138,7 @@ def test_run_cli_interactive_selection():
         ("job2", "id2"),
     ]
     run_job_mock = Mock(return_value=("execution_successful", None))
-    status, elapsed = cli.run_cli(
+    status = cli.run_cli(
         job_name=None,
         wait=False,
         poll_interval=None,
@@ -150,7 +148,6 @@ def test_run_cli_interactive_selection():
         run_job_fn=run_job_mock,
     )
     assert status == "execution_successful"
-    assert elapsed is None
     run_job_mock.assert_called_once_with(
         client,
         "id2",
@@ -181,15 +178,11 @@ def test_run_cli_invalid_selection():
 def test_main_success(monkeypatch):
     fake_client = Mock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        ["prog", "--job", "job1"],
-    )
+    monkeypatch.setattr(sys, "argv", ["prog", "--job", "job1"])
     monkeypatch.setenv("ACCESS_TOKEN", "token")
     monkeypatch.setenv("API_URL", "https://example.com")
     monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
-    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: ("execution_successful", None))
+    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: "execution_successful")
     cli.main()
 
 
@@ -204,16 +197,16 @@ def test_main_exits_on_failure(monkeypatch):
     monkeypatch.setenv("ACCESS_TOKEN", "token")
     monkeypatch.setenv("API_URL", "https://example.com")
     monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
-    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: ("execution_failed", None))
-    with pytest.raises(SystemExit) as e:
+    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: "execution_failed")
+    with pytest.raises(SystemExit) as exc:
         cli.main()
-    assert e.value.code == 1
+    assert exc.value.code == 1
 
 
 def test_main_parses_args_and_passes_values(monkeypatch):
     def fake_run_cli(**kwargs):
         called.update(kwargs)
-        return ("execution_successful", None)
+        return "execution_successful"
 
     called = {}
     fake_client = Mock(get_jobs=lambda: [("job1", "id1")])
@@ -233,9 +226,9 @@ def test_main_parses_args_and_passes_values(monkeypatch):
 
 def test_main_rejects_poll_interval_without_wait(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["prog", "--poll-interval", "10"])
-    with pytest.raises(SystemExit) as e:
+    with pytest.raises(SystemExit) as exc:
         cli.main()
-    assert e.value.code == 1
+    assert exc.value.code == 1
 
 
 def test_parse_args_defaults_without_optional_flags():
