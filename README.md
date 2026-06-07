@@ -42,11 +42,10 @@
 
 ### About
 
-`talend_task` is a Python CLI for running [Talend Cloud](https://talend.com) jobs,
-including ETL pipelines, workflows, and tasks.
+`talend_task` is a Python CLI for running [Talend Cloud](https://talend.com)
+jobs, including ETL pipelines, workflows, and tasks.
 
-Jobs can be selected via the `--job` argument or chosen interactively from
-a list of available jobs.
+Select a job interactively, or specify one directly with `--job`.
 
 ----
 
@@ -105,7 +104,7 @@ options:
 
 ### CLI Usage Examples
 
-Launch the CLI to select a job to run:
+Launch the CLI and select a job from the menu:
 
 ```
 talend_task
