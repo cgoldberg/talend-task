@@ -132,7 +132,7 @@ talend_task --wait --job Job1
     pip install --editable --group dev --group test .
     ```
 
-- Run all tests in the default Python environment:
+- Run all tests:
 
     ```
     pytest
