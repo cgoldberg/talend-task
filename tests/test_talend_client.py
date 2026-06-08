@@ -1,5 +1,5 @@
 # Copyright (c) 2026 Corey Goldberg
-# License: MIT
+# SPDX-License-Identifier: MIT
 
 
 from unittest.mock import Mock, call
