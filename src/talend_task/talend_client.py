@@ -43,6 +43,23 @@ class TalendClient:
         return [(item["name"], item["executable"]) for item in result["items"]]
 
     def get_execution_status(self, execution_id):
+        """Get current execution status.
+
+        Either the execution request is rejected before it enters the runtime
+        pipeline, or it follows a single linear execution flow that results in
+        exactly one terminal state.
+
+        Execution lifecycle:
+
+            execution_rejected
+
+            OR
+
+            dispatching → executing → execution_successful
+                                    → execution_failed
+                                    → execution_canceled
+                                    → execution_terminated
+        """
         result = self._get(f"/executions/{execution_id}")
         status = result["status"]
         return status

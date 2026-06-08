@@ -94,8 +94,8 @@ def test_run_job_returns_execution_id():
         "token",
     )
     client._post = Mock(return_value={"executionId": "exec-123"})
-    result = client.run_job("job-456")
-    assert result == "exec-123"
+    execution_id = client.run_job("job-456")
+    assert execution_id == "exec-123"
     client._post.assert_called_once_with(
         "/executions",
         {"executable": "job-456"},
@@ -108,8 +108,8 @@ def test_run_without_wait_returns_unknown_status():
         "token",
     )
     client.run_job = Mock(return_value="exec-123")
-    result = client.run("job-456")
-    assert result == "unknown"
+    status = client.run("job-456")
+    assert status == "unknown"
 
 
 def test_run_waits_until_completion(monkeypatch):
@@ -123,7 +123,7 @@ def test_run_waits_until_completion(monkeypatch):
             "dispatching",
             "executing",
             "executing",
-            "completed",
+            "execution_successful",
         ]
     )
     client.get_execution_status = Mock(side_effect=lambda _: next(statuses))
@@ -132,12 +132,12 @@ def test_run_waits_until_completion(monkeypatch):
         "talend_task.talend_client.time.sleep",
         sleep,
     )
-    result = client.run(
+    status = client.run(
         "job-456",
         wait=True,
         poll_interval=1,
     )
-    assert result == "completed"
+    assert status == "execution_successful"
     assert sleep.call_args_list == [call(1)] * 3
 
 
@@ -150,7 +150,7 @@ def test_run_uses_default_poll_interval(monkeypatch):
     statuses = iter(
         [
             "executing",
-            "completed",
+            "execution_successful",
         ]
     )
     client.get_execution_status = Mock(side_effect=lambda _: next(statuses))
@@ -159,12 +159,12 @@ def test_run_uses_default_poll_interval(monkeypatch):
         "talend_task.talend_client.time.sleep",
         sleep,
     )
-    result = client.run(
+    status = client.run(
         "job-456",
         wait=True,
         poll_interval=None,
     )
-    assert result == "completed"
+    assert status == "execution_successful"
     sleep.assert_called_once_with(5)
 
 

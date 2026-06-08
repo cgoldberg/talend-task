@@ -22,7 +22,7 @@ console = Console()
 def require_env(name):
     value = os.getenv(name)
     if not value:
-        raise RuntimeError(f"Missing required environment variable: {name}")
+        raise ValueError(f"Missing required environment variable: {name}")
     return value
 
 
@@ -161,19 +161,11 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
-def main():
-    args = parse_args()
-    logging.basicConfig(
-        level=logging.DEBUG if args.debug else logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        force=True,
-        stream=sys.stdout,
-    )
+def run(args):
     try:
         if args.poll_interval is not None and not args.wait:
             logger.error("Error: --poll-interval requires --wait")
-            sys.exit(1)
+            return 1
         load_dotenv()
         access_token = require_env("ACCESS_TOKEN")
         api_url = require_env("API_URL")
@@ -189,10 +181,23 @@ def main():
         if args.wait:
             logger.info("Execution finished")
         if status != "execution_successful":
-            sys.exit(1)
+            return 1
     except ValueError as e:
         logger.error("Error: %s", e)
-        sys.exit(1)
+        return 1
     except KeyboardInterrupt:
         logger.info("Exiting")
-        sys.exit(130)
+        return 130
+    return 0
+
+
+def main():
+    args = parse_args()
+    logging.basicConfig(
+        level=logging.DEBUG if args.debug else logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        force=True,
+        stream=sys.stdout,
+    )
+    sys.exit(run(args))

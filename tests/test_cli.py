@@ -22,13 +22,12 @@ def test_require_env_returns_value(monkeypatch):
 
 
 def test_require_env_missing():
-    with pytest.raises(RuntimeError) as exc:
+    with pytest.raises(ValueError, match="Missing required environment variable"):
         cli.require_env("DOES_NOT_EXIST")
-    assert "Missing required environment variable" in str(exc.value)
 
 
 @pytest.mark.parametrize(
-    ("seconds", "expected"),
+    ("seconds", "expected_time"),
     [
         pytest.param(0, "00:00:00", id="zero"),
         pytest.param(5, "00:00:05", id="seconds"),
@@ -36,15 +35,59 @@ def test_require_env_missing():
         pytest.param(3661, "01:01:01", id="hours"),
     ],
 )
-def test_convert_time(seconds, expected):
-    assert cli.convert_time(seconds) == expected
+def test_convert_time(seconds, expected_time):
+    assert cli.convert_time(seconds) == expected_time
+
+
+@pytest.mark.parametrize(
+    ("argv", "expected_args"),
+    [
+        pytest.param(
+            [],
+            {"debug": False, "wait": False, "job": None, "poll_interval": None},
+            id="defaults",
+        ),
+        pytest.param(
+            ["--debug"],
+            {"debug": True, "wait": False, "job": None, "poll_interval": None},
+            id="debug",
+        ),
+        pytest.param(
+            ["--wait"],
+            {"debug": False, "wait": True, "job": None, "poll_interval": None},
+            id="wait",
+        ),
+        pytest.param(
+            ["--job", "job1"],
+            {"debug": False, "wait": False, "job": "job1", "poll_interval": None},
+            id="job",
+        ),
+        pytest.param(
+            ["--poll-interval", "10"],
+            {"debug": False, "wait": False, "job": None, "poll_interval": 10},
+            id="poll_interval",
+        ),
+    ],
+)
+def test_parse_args(argv, expected_args):
+    args = cli.parse_args(argv)
+    assert args.debug == expected_args["debug"]
+    assert args.wait == expected_args["wait"]
+    assert args.job == expected_args["job"]
+    assert args.poll_interval == expected_args["poll_interval"]
+
+
+def test_parse_args_wait_with_poll_interval():
+    args = cli.parse_args(["--wait", "--poll-interval", "10"])
+    assert args.wait is True
+    assert args.poll_interval == 10
 
 
 def test_run_job_no_wait():
     client = Mock()
-    client.run.return_value = "submitted"
+    client.run.return_value = "unknown"
     status, elapsed_time = cli.run_job(client, "job123", wait=False, poll_interval=None)
-    assert status == "submitted"
+    assert status == "unknown"
     assert elapsed_time is None
     client.run.assert_called_once_with("job123")
 
@@ -94,9 +137,10 @@ def test_run_cli_named_job_fail():
 def test_run_cli_invalid_job():
     client = Mock()
     jobs = [("job1", "id1")]
-    with pytest.raises(ValueError, match="Invalid job"):
+    unknown_job = "does_not_exist"
+    with pytest.raises(ValueError, match=f"Invalid job: {unknown_job}"):
         cli.run_cli(
-            job_name="does_not_exist",
+            job_name=unknown_job,
             wait=False,
             poll_interval=None,
             client=client,
@@ -141,80 +185,84 @@ def test_run_cli_invalid_selection():
         )
 
 
-def test_main_success(monkeypatch):
+def test_run_returns_0_on_success(monkeypatch):
     fake_client = Mock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(sys, "argv", ["prog", "--job", "job1"])
     monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
     monkeypatch.setattr(cli, "run_cli", lambda **kwargs: "execution_successful")
-    cli.main()
+    args = cli.parse_args(["--job", "job1"])
+    assert cli.run(args) == 0
 
 
-def test_main_exits_on_failure(monkeypatch):
+@pytest.mark.parametrize(
+    "status",
+    [
+        "execution_failed",
+        "execution_canceled",
+        "execution_terminated",
+        "execution_rejected",
+    ],
+)
+def test_run_returns_1_on_failure(monkeypatch, status):
     fake_client = Mock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(sys, "argv", ["prog", "--job", "job1"])
     monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
-    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: "execution_failed")
-    with pytest.raises(SystemExit) as exc:
-        cli.main()
-    assert exc.value.code == 1
+    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: status)
+    args = cli.parse_args(["--job", "job1"])
+    assert cli.run(args) == 1
 
 
-def test_main_keyboard_interrupt(monkeypatch):
+@pytest.mark.parametrize(
+    "missing_var",
+    [
+        pytest.param("ACCESS_TOKEN", id="access_token"),
+        pytest.param("API_URL", id="api_url"),
+    ],
+)
+def test_run_returns_1_on_missing_env_var(monkeypatch, missing_var):
+    monkeypatch.setattr(cli, "load_dotenv", lambda: None)
+    monkeypatch.delenv(missing_var, raising=False)
+    args = cli.parse_args(["--job", "job1"])
+    assert cli.run(args) == 1
+
+
+def test_run_returns_130_on_keyboard_interrupt(monkeypatch):
     def boom(**kwargs):
         raise KeyboardInterrupt()
 
     fake_client = Mock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(sys, "argv", ["prog", "--job", "job1"])
     monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
     monkeypatch.setattr(cli, "run_cli", boom)
-    with pytest.raises(SystemExit) as exc:
-        cli.main()
-    assert exc.value.code == 130
+    args = cli.parse_args(["--job", "job1"])
+    assert cli.run(args) == 130
 
 
-def test_main_parses_args_and_passes_values(monkeypatch):
+def test_run_parses_args_and_passes_values(monkeypatch):
     def fake_run_cli(**kwargs):
         called.update(kwargs)
         return "execution_successful"
 
     called = {}
-    fake_client = Mock(get_jobs=lambda: [("job1", "id1")])
-    monkeypatch.setattr(
-        sys, "argv", ["prog", "--wait", "--poll-interval", "10", "--job", "job1"]
-    )
-    monkeypatch.setattr(cli, "require_env", lambda name: "value")
+    fake_client = Mock()
+    fake_client.get_jobs.return_value = [("job1", "id1")]
     monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
     monkeypatch.setattr(cli, "run_cli", fake_run_cli)
-    cli.main()
+    args = cli.parse_args(["--wait", "--poll-interval", "10", "--job", "job1"])
+    assert cli.run(args) == 0
     assert called["wait"] is True
     assert called["job_name"] == "job1"
     assert called["poll_interval"] == 10
 
 
-def test_main_rejects_poll_interval_without_wait(monkeypatch):
-    monkeypatch.setattr(sys, "argv", ["prog", "--poll-interval", "10"])
+def test_run_rejects_poll_interval_without_wait(monkeypatch):
+    args = cli.parse_args(["--poll-interval", "10"])
+    assert cli.run(args) == 1
+
+
+def test_main_exits_with_code_from_run(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["prog"])
+    monkeypatch.setattr(cli, "run", lambda args: 0)
     with pytest.raises(SystemExit) as exc:
         cli.main()
-    assert exc.value.code == 1
-
-
-def test_parse_args_defaults_without_optional_flags():
-    args = cli.parse_args(["--job", "job1"])
-    assert args.job == "job1"
-    assert args.debug is False
-    assert args.wait is False
-    assert args.poll_interval is None
-
-
-def test_parse_args_with_debug_flag_sets_true():
-    args = cli.parse_args(["--debug", "--job", "job1"])
-    assert args.debug is True
-
-
-def test_parse_args_with_wait_and_poll_interval_parses_successfully():
-    args = cli.parse_args(["--wait", "--poll-interval", "10"])
-    assert args.wait is True
-    assert args.poll_interval == 10
+    assert exc.value.code == 0
