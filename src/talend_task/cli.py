@@ -102,11 +102,16 @@ def run_cli(
         wait=wait,
     )
     if wait:
+        completed_msg = (
+            "[bold green]✓ Completed[/bold green]\n"
+            if status == "execution_successful"
+            else "[bold red]✗ Completed with errors[/bold red]\n"
+        )
         console.print(
             Panel.fit(
-                f"[bold green]✓ Completed[/bold green]\n"
-                f"[bold]Job:[/bold] {job_name}\n"
-                f"[bold]Duration:[/bold] {elapsed_time}",
+                completed_msg
+                + f"[bold]Job:[/bold] {job_name}\n"
+                + f"[bold]Duration:[/bold] {elapsed_time}",
                 border_style="green",
             )
         )
