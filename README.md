@@ -9,7 +9,7 @@
 
 ----
 
-### Status
+## Status
 
 <table>
   <tr>
@@ -40,7 +40,7 @@
 
 ----
 
-### About
+## About
 
 `talend_task` is a Python CLI for running [Talend Cloud](https://talend.com)
 jobs, including ETL pipelines, workflows, and tasks.
@@ -49,42 +49,19 @@ Select a job interactively, or specify one directly with `--job`.
 
 ----
 
-### Installation
+## Installation
 
-Install from [PyPI][pypi-home]:
+Install the package from [PyPI][pypi-home]:
 
-```
+```bash
 pip install talend-task
 ```
 
-----
+## CLI
 
-### Configuration
+After installation, the `talend_task` command is available in your shell.
 
-You need to configure an Access Token (generated in
-[Talend Management Console](https://help.qlik.com/talend/management-console-user-guide))
-and the API endpoint URL you will connect to (i.e.
-`https://api.<region>.talend.com`).
-
-These are setup using the `API_URL` and `ACCESS_TOKEN` environment variables:
-
-```
-$ export API_URL=<endpoint URL>
-$ export ACCESS_TOKEN=<access token>
-```
-
-You can also set this in an `.env` file in the current directory.
-
-For example:
-
-```
-API_URL=https://api.us-west.cloud.talend.com
-ACCESS_TOKEN=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-```
-
-----
-
-### CLI Options
+##### CLI Options:
 
 ```
 $ talend_task -h
@@ -102,28 +79,52 @@ options:
 
 ----
 
-### CLI Usage Examples
+## Configuration
 
-##### Interactive mode
+The CLI requires an Access Token and an API URL for your Talend region.
 
-Run the CLI with no job specified. Presents a menu to select and execute a job:
+- **Access Token**: Generate it in the
+  [Talend Management Console](https://help.qlik.com/talend/management-console-user-guide).
+- **API URL**: Base endpoint URL for the API you will connect to.
+
+Configuration is provided via environment variables:
+
+```bash
+export API_URL=https://api.<region>.talend.com
+export ACCESS_TOKEN=<access-token>
+```
+
+Alternatively, you can define these variables in a `.env` file in the current
+directory:
 
 ```
-talend_task
+API_URL=https://api.<region>.talend.com
+ACCESS_TOKEN=<access-token>
 ```
 
-##### Direct mode
+----
 
-Provide `--job <name>` to execute a job immediately, bypassing the menu:
+## Usage Examples
 
-```
+#### Direct mode
+
+Run a specific job immediately by providing `--job <name>`:
+
+```bash
 talend_task --job Job1
 ```
 
-Optionally use `--wait` to poll until the job completes and return its final
-status:
+#### Interactive mode
 
+Run the CLI without specifying a job to select and execute one from a menu:
+
+```bash
+talend_task
 ```
+
+Optionally, add the `--wait` flag in either mode to wait for the job to complete and return its final status.
+
+```bash
 talend_task --wait --job Job1
 ```
 
@@ -143,7 +144,7 @@ talend_task --wait --job Job1
 
 ### Development
 
-- Install as editable package with all required development/testing
+- Install as editable package with required development/testing
   dependencies:
 
     ```
