@@ -145,10 +145,11 @@ def create_parser():
     parser.add_argument(
         "--wait",
         action="store_true",
-        help="wait for job to complete and show status",
+        help="wait for job to complete and return status",
     )
     parser.add_argument(
         "--job",
+        metavar="NAME",
         help="job name",
     )
     parser.add_argument(
