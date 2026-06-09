@@ -44,27 +44,68 @@ def test_convert_time(seconds, expected_time):
     [
         pytest.param(
             [],
-            {"debug": False, "wait": False, "job": None, "poll_interval": None},
+            {
+                "debug": False,
+                "wait": False,
+                "job": None,
+                "timeout": None,
+                "poll_interval": None,
+            },
             id="defaults",
         ),
         pytest.param(
             ["--debug"],
-            {"debug": True, "wait": False, "job": None, "poll_interval": None},
+            {
+                "debug": True,
+                "wait": False,
+                "job": None,
+                "timeout": None,
+                "poll_interval": None,
+            },
             id="debug",
         ),
         pytest.param(
             ["--wait"],
-            {"debug": False, "wait": True, "job": None, "poll_interval": None},
+            {
+                "debug": False,
+                "wait": True,
+                "job": None,
+                "timeout": None,
+                "poll_interval": None,
+            },
             id="wait",
         ),
         pytest.param(
             ["--job", "job1"],
-            {"debug": False, "wait": False, "job": "job1", "poll_interval": None},
+            {
+                "debug": False,
+                "wait": False,
+                "job": "job1",
+                "timeout": None,
+                "poll_interval": None,
+            },
             id="job",
         ),
         pytest.param(
+            ["--timeout", "30"],
+            {
+                "debug": False,
+                "wait": False,
+                "job": None,
+                "timeout": 30,
+                "poll_interval": None,
+            },
+            id="timeout",
+        ),
+        pytest.param(
             ["--poll-interval", "10"],
-            {"debug": False, "wait": False, "job": None, "poll_interval": 10},
+            {
+                "debug": False,
+                "wait": False,
+                "job": None,
+                "timeout": None,
+                "poll_interval": 10,
+            },
             id="poll_interval",
         ),
     ],
@@ -74,19 +115,27 @@ def test_parse_args(argv, expected_args):
     assert args.debug == expected_args["debug"]
     assert args.wait == expected_args["wait"]
     assert args.job == expected_args["job"]
+    assert args.timeout == expected_args["timeout"]
     assert args.poll_interval == expected_args["poll_interval"]
 
 
-def test_parse_args_wait_with_poll_interval():
-    args = cli.parse_args(["--wait", "--poll-interval", "10"])
+def test_parse_args_wait_with_timeout_poll_interval():
+    args = cli.parse_args(["--wait", "--timeout", "30", "--poll-interval", "10"])
     assert args.wait is True
+    assert args.timeout == 30
     assert args.poll_interval == 10
 
 
 def test_run_job_no_wait():
     client = Mock()
     client.run.return_value = "unknown"
-    status, elapsed_time = cli.run_job(client, "job123", wait=False, poll_interval=None)
+    status, elapsed_time = cli.run_job(
+        client,
+        "job123",
+        wait=False,
+        timeout=None,
+        poll_interval=None,
+    )
     assert status == "unknown"
     assert elapsed_time is None
     client.run.assert_called_once_with("job123")
@@ -97,7 +146,13 @@ def test_run_job_wait(monkeypatch):
     client.run.return_value = "execution_successful"
     times = iter([100.0, 165.0])
     monkeypatch.setattr("talend_task.cli.time.monotonic", lambda: next(times))
-    status, elapsed_time = cli.run_job(client, "job123", wait=True, poll_interval=5)
+    status, elapsed_time = cli.run_job(
+        client,
+        "job123",
+        wait=True,
+        timeout=None,
+        poll_interval=5,
+    )
     assert status == "execution_successful"
     assert elapsed_time == "00:01:05"
 
@@ -109,13 +164,20 @@ def test_run_cli_named_job_success():
     status = cli.run_cli(
         job_name="job2",
         wait=False,
+        timeout=None,
         poll_interval=None,
         client=client,
         jobs=jobs,
         run_job_fn=run_job_mock,
     )
     assert status == "execution_successful"
-    run_job_mock.assert_called_once_with(client, "id2", wait=False, poll_interval=None)
+    run_job_mock.assert_called_once_with(
+        client,
+        "id2",
+        wait=False,
+        timeout=None,
+        poll_interval=None,
+    )
 
 
 def test_run_cli_named_job_fail():
@@ -125,13 +187,20 @@ def test_run_cli_named_job_fail():
     status = cli.run_cli(
         job_name="job1",
         wait=False,
+        timeout=None,
         poll_interval=None,
         client=client,
         jobs=jobs,
         run_job_fn=run_job_mock,
     )
     assert status == "execution_failed"
-    run_job_mock.assert_called_once_with(client, "id1", wait=False, poll_interval=None)
+    run_job_mock.assert_called_once_with(
+        client,
+        "id1",
+        wait=False,
+        timeout=None,
+        poll_interval=None,
+    )
 
 
 def test_run_cli_invalid_job():
@@ -142,6 +211,7 @@ def test_run_cli_invalid_job():
         cli.run_cli(
             job_name=unknown_job,
             wait=False,
+            timeout=None,
             poll_interval=None,
             client=client,
             jobs=jobs,
@@ -158,6 +228,7 @@ def test_run_cli_interactive_selection():
     status = cli.run_cli(
         job_name=None,
         wait=False,
+        timeout=None,
         poll_interval=None,
         client=client,
         jobs=jobs,
@@ -165,7 +236,13 @@ def test_run_cli_interactive_selection():
         run_job_fn=run_job_mock,
     )
     assert status == "execution_successful"
-    run_job_mock.assert_called_once_with(client, "id2", wait=False, poll_interval=None)
+    run_job_mock.assert_called_once_with(
+        client,
+        "id2",
+        wait=False,
+        timeout=None,
+        poll_interval=None,
+    )
 
 
 def test_run_cli_invalid_selection():
@@ -178,6 +255,7 @@ def test_run_cli_invalid_selection():
         cli.run_cli(
             job_name=None,
             wait=False,
+            timeout=None,
             poll_interval=None,
             client=client,
             jobs=jobs,

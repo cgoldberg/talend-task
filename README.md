@@ -74,6 +74,7 @@ options:
   --debug               enable debug logging
   --wait                wait for job to complete and return status
   --job NAME            job name
+  --timeout SECS        timeout (requires --wait) (default: 0)
   --poll-interval SECS  polling interval (requires --wait) (default: 5)
 ```
 

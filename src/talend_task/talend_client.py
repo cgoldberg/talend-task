@@ -77,14 +77,16 @@ class TalendClient:
         )
         return execution_id
 
-    def run(self, job_id, wait=False, poll_interval=None, timeout=JOB_TIMEOUT):
+    def run(self, job_id, wait=False, timeout=None, poll_interval=None):
+        timeout = timeout if timeout is not None else 0
         poll_interval = poll_interval if poll_interval is not None else 5
         status = "unknown"
         exec_id = self.run_job(job_id)
         if not wait:
             return status
         pending_statuses = {"dispatching", "executing"}
-        start = time.monotonic()
+        if timeout:
+            start = time.monotonic()
         while True:
             status = self.get_execution_status(exec_id)
             logger.info(
@@ -93,10 +95,11 @@ class TalendClient:
             )
             if status not in pending_statuses:
                 return status
-            if time.monotonic() - start >= timeout:
-                raise TimeoutError(
-                    f"Job {job_id} did not complete within {timeout} seconds"
-                )
+            if timeout:
+                if time.monotonic() - start >= timeout:
+                    raise TimeoutError(
+                        f"Job {job_id} did not complete within {timeout} seconds"
+                    )
             time.sleep(poll_interval)
 
 

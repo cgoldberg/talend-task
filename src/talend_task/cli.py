@@ -50,13 +50,18 @@ def select_job(jobs, input_fn=input):
     return jobs[job_number - 1]
 
 
-def run_job(client, job_id, poll_interval, wait=True):
+def run_job(client, job_id, timeout, poll_interval, wait=True):
     if not wait:
         status = client.run(job_id)
         return status, None
     else:
         start = time.monotonic()
-        status = client.run(job_id, poll_interval=poll_interval, wait=True)
+        status = client.run(
+            job_id,
+            wait=True,
+            timeout=timeout,
+            poll_interval=poll_interval,
+        )
         stop = time.monotonic()
         elapsed_time = convert_time(stop - start)
         return status, elapsed_time
@@ -65,6 +70,7 @@ def run_job(client, job_id, poll_interval, wait=True):
 def run_cli(
     job_name,
     wait,
+    timeout,
     poll_interval,
     client,
     jobs,
@@ -81,6 +87,7 @@ def run_cli(
         status, elapsed_time = run_job_fn(
             client,
             job_id,
+            timeout=timeout,
             poll_interval=poll_interval,
             wait=wait,
         )
@@ -99,6 +106,7 @@ def run_cli(
     status, elapsed_time = run_job_fn(
         client,
         job_id,
+        timeout=timeout,
         poll_interval=poll_interval,
         wait=wait,
     )
@@ -155,6 +163,13 @@ def create_parser():
         help="job name",
     )
     parser.add_argument(
+        "--timeout",
+        default=None,
+        type=int,
+        metavar="SECS",
+        help="timeout (requires --wait) (default: 0)",
+    )
+    parser.add_argument(
         "--poll-interval",
         default=None,
         type=int,
@@ -174,6 +189,9 @@ def run(args):
         if args.poll_interval is not None and not args.wait:
             logger.error("Error: --poll-interval requires --wait")
             return 1
+        if args.timeout is not None and not args.wait:
+            logger.error("Error: --timeout requires --wait")
+            return 1
         load_dotenv()
         access_token = require_env("ACCESS_TOKEN")
         api_url = require_env("API_URL")
@@ -181,6 +199,7 @@ def run(args):
         jobs = client.get_jobs()
         status = run_cli(
             job_name=args.job,
+            timeout=args.timeout,
             wait=args.wait,
             poll_interval=args.poll_interval,
             client=client,
@@ -190,7 +209,7 @@ def run(args):
             logger.info("Execution finished")
         if status != "execution_successful":
             return 1
-    except ValueError as e:
+    except (ValueError, TimeoutError) as e:
         logger.error("Error: %s", e)
         return 1
     except KeyboardInterrupt:
