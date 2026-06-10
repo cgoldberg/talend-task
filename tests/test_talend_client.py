@@ -58,24 +58,24 @@ def test_get_jobs_returns_name_and_executable_pairs():
         "https://api.example.com/",
         "token",
     )
-    client._get = Mock(
-        return_value={
-            "items": [
-                {
-                    "name": "job1",
-                    "executable": "abc",
-                },
-                {
-                    "name": "job2",
-                    "executable": "xyz",
-                },
-            ]
-        }
-    )
-    assert client.get_jobs() == [
+    response_payload = {
+        "items": [
+            {
+                "name": "job1",
+                "executable": "abc",
+            },
+            {
+                "name": "job2",
+                "executable": "xyz",
+            },
+        ]
+    }
+    expected = [
         ("job1", "abc"),
         ("job2", "xyz"),
     ]
+    client._get = Mock(return_value=response_payload)
+    assert client.get_jobs() == expected
 
 
 def test_get_execution_status():
@@ -118,15 +118,13 @@ def test_run_waits_until_completion(monkeypatch):
         "token",
     )
     client.run_job = Mock(return_value="exec-123")
-    statuses = iter(
-        [
-            "dispatching",
-            "executing",
-            "executing",
-            "execution_successful",
-        ]
+    statuses = (
+        "dispatching",
+        "executing",
+        "executing",
+        "execution_successful",
     )
-    client.get_execution_status = Mock(side_effect=lambda _: next(statuses))
+    client.get_execution_status = Mock(side_effect=statuses)
     sleep = Mock()
     monkeypatch.setattr(
         "talend_task.talend_client.time.sleep",
@@ -147,13 +145,12 @@ def test_run_uses_default_poll_interval(monkeypatch):
         "token",
     )
     client.run_job = Mock(return_value="exec-123")
-    statuses = iter(
-        [
-            "executing",
-            "execution_successful",
-        ]
+    statuses = (
+        "executing",
+        "execution_successful",
     )
-    client.get_execution_status = Mock(side_effect=lambda _: next(statuses))
+
+    client.get_execution_status = Mock(side_effect=statuses)
     sleep = Mock()
     monkeypatch.setattr(
         "talend_task.talend_client.time.sleep",
@@ -177,18 +174,11 @@ def test_run_times_out(monkeypatch):
     client.get_execution_status = Mock(return_value="executing")
     monkeypatch.setattr(
         "talend_task.talend_client.time.sleep",
-        lambda _: None,
-    )
-    monotonic_values = iter(
-        [
-            0.0,
-            0.5,
-            2.0,
-        ]
+        Mock(),
     )
     monkeypatch.setattr(
         "talend_task.talend_client.time.monotonic",
-        lambda: next(monotonic_values),
+        Mock(side_effect=(0.0, 0.5, 2.0)),
     )
     with pytest.raises(TimeoutError, match="did not complete within"):
         client.run(
