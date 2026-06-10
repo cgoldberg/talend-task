@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 HTTP_TIMEOUT = 30
-JOB_TIMEOUT = 3600
 
 
 class TalendClient:
