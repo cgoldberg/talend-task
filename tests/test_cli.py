@@ -39,73 +39,48 @@ def test_convert_time(seconds, expected_time):
     assert cli.convert_time(seconds) == expected_time
 
 
+def _build_expected_cli_args(**overrides):
+    base = {
+        "debug": False,
+        "wait": False,
+        "job": None,
+        "timeout": None,
+        "poll_interval": None,
+    }
+    return {**base, **overrides}
+
+
 @pytest.mark.parametrize(
     ("argv", "expected_args"),
     [
         pytest.param(
             [],
-            {
-                "debug": False,
-                "wait": False,
-                "job": None,
-                "timeout": None,
-                "poll_interval": None,
-            },
+            _build_expected_cli_args(),
             id="defaults",
         ),
         pytest.param(
             ["--debug"],
-            {
-                "debug": True,
-                "wait": False,
-                "job": None,
-                "timeout": None,
-                "poll_interval": None,
-            },
+            _build_expected_cli_args(debug=True),
             id="debug",
         ),
         pytest.param(
             ["--wait"],
-            {
-                "debug": False,
-                "wait": True,
-                "job": None,
-                "timeout": None,
-                "poll_interval": None,
-            },
+            _build_expected_cli_args(wait=True),
             id="wait",
         ),
         pytest.param(
             ["--job", "job1"],
-            {
-                "debug": False,
-                "wait": False,
-                "job": "job1",
-                "timeout": None,
-                "poll_interval": None,
-            },
+            _build_expected_cli_args(job="job1"),
             id="job",
         ),
         pytest.param(
             ["--timeout", "30"],
-            {
-                "debug": False,
-                "wait": False,
-                "job": None,
-                "timeout": 30,
-                "poll_interval": None,
-            },
+            _build_expected_cli_args(timeout=30),
             id="timeout",
         ),
         pytest.param(
             ["--poll-interval", "10"],
-            {
-                "debug": False,
-                "wait": False,
-                "job": None,
-                "timeout": None,
-                "poll_interval": 10,
-            },
+            _build_expected_cli_args(poll_interval=10),
             id="poll_interval",
         ),
     ],
