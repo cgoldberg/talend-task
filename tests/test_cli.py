@@ -119,8 +119,10 @@ def test_run_job_no_wait():
 def test_run_job_wait(monkeypatch):
     client = Mock()
     client.run.return_value = "execution_successful"
-    times = iter([100.0, 165.0])
-    monkeypatch.setattr("talend_task.cli.time.monotonic", lambda: next(times))
+    monkeypatch.setattr(
+        "talend_task.cli.time.monotonic",
+        Mock(side_effect=[100.0, 165.0]),
+    )
     status, elapsed_time = cli.run_job(
         client,
         "job123",
@@ -306,6 +308,11 @@ def test_run_parses_args_and_passes_values(monkeypatch):
     assert called["wait"] is True
     assert called["job_name"] == "job1"
     assert called["poll_interval"] == 10
+
+
+def test_run_rejects_timeout_without_wait(monkeypatch):
+    args = cli.parse_args(["--timeout", "10"])
+    assert cli.run(args) == 1
 
 
 def test_run_rejects_poll_interval_without_wait(monkeypatch):
