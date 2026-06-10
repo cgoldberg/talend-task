@@ -75,7 +75,7 @@ def test_run_job_returns_execution_id(client):
     client._post.assert_called_once_with("/executions", {"executable": "job-456"})
 
 
-def test_run_polls_until_completion_when_waiting(client, monkeypatch):
+def test_run_polls_until_completion_when_waiting(monkeypatch, client):
     client.run_job = Mock(return_value="exec-123")
     statuses = ("dispatching", "executing", "execution_successful")
     client.get_execution_status = Mock(side_effect=statuses)
@@ -97,7 +97,7 @@ def test_run_does_not_poll_and_returns_unknown(client):
     client.get_execution_status.assert_not_called()
 
 
-def test_run_uses_default_polling_interval(client, monkeypatch):
+def test_run_uses_default_polling_interval(monkeypatch, client):
     client.run_job = Mock(return_value="exec-123")
     statuses = ("dispatching", "executing", "execution_successful")
     client.get_execution_status = Mock(side_effect=statuses)

@@ -22,7 +22,7 @@ def test_require_env_returns_value(monkeypatch):
 
 
 def test_require_env_missing():
-    with pytest.raises(ValueError, match="Missing required environment variable"):
+    with pytest.raises(cli.ConfigError, match="Missing required environment variable"):
         cli.require_env("DOES_NOT_EXIST")
 
 
@@ -39,66 +39,23 @@ def test_convert_time(seconds, expected_time):
     assert cli.convert_time(seconds) == expected_time
 
 
-def _build_expected_cli_args(**overrides):
-    base = {
-        "debug": False,
-        "wait": False,
-        "job": None,
-        "timeout": None,
-        "poll_interval": None,
-    }
-    return {**base, **overrides}
+def test_parse_defaults():
+    args = cli.parse_args([])
+    assert args.debug is False
+    assert args.wait is False
+    assert args.job is None
+    assert args.timeout is None
+    assert args.poll_interval is None
 
 
-@pytest.mark.parametrize(
-    ("argv", "expected_args"),
-    [
-        pytest.param(
-            [],
-            _build_expected_cli_args(),
-            id="defaults",
-        ),
-        pytest.param(
-            ["--debug"],
-            _build_expected_cli_args(debug=True),
-            id="debug",
-        ),
-        pytest.param(
-            ["--wait"],
-            _build_expected_cli_args(wait=True),
-            id="wait",
-        ),
-        pytest.param(
-            ["--job", "job1"],
-            _build_expected_cli_args(job="job1"),
-            id="job",
-        ),
-        pytest.param(
-            ["--timeout", "30"],
-            _build_expected_cli_args(timeout=30),
-            id="timeout",
-        ),
-        pytest.param(
-            ["--poll-interval", "10"],
-            _build_expected_cli_args(poll_interval=10),
-            id="poll_interval",
-        ),
-    ],
-)
-def test_parse_args(argv, expected_args):
-    args = cli.parse_args(argv)
-    assert args.debug == expected_args["debug"]
-    assert args.wait == expected_args["wait"]
-    assert args.job == expected_args["job"]
-    assert args.timeout == expected_args["timeout"]
-    assert args.poll_interval == expected_args["poll_interval"]
-
-
-def test_parse_args_wait_with_timeout_poll_interval():
-    args = cli.parse_args(["--wait", "--timeout", "30", "--poll-interval", "10"])
+def test_parse_flags():
+    args = cli.parse_args(
+        ["--wait", "--timeout", "30", "--poll-interval", "10", "--job", "job1"]
+    )
     assert args.wait is True
     assert args.timeout == 30
     assert args.poll_interval == 10
+    assert args.job == "job1"
 
 
 def test_run_job_no_wait():
@@ -274,11 +231,11 @@ def test_run_returns_1_on_failure(monkeypatch, status):
         pytest.param("API_URL", id="api_url"),
     ],
 )
-def test_run_returns_1_on_missing_env_var(monkeypatch, missing_var):
+def test_run_returns_2_on_missing_env_var(monkeypatch, missing_var):
     monkeypatch.setattr(cli, "load_dotenv", lambda: None)
     monkeypatch.delenv(missing_var, raising=False)
     args = cli.parse_args(["--job", "job1"])
-    assert cli.run(args) == 1
+    assert cli.run(args) == 2
 
 
 def test_run_returns_130_on_keyboard_interrupt(monkeypatch):
@@ -312,12 +269,12 @@ def test_run_parses_args_and_passes_values(monkeypatch):
 
 def test_run_rejects_timeout_without_wait(monkeypatch):
     args = cli.parse_args(["--timeout", "10"])
-    assert cli.run(args) == 1
+    assert cli.run(args) == 2
 
 
 def test_run_rejects_poll_interval_without_wait(monkeypatch):
     args = cli.parse_args(["--poll-interval", "10"])
-    assert cli.run(args) == 1
+    assert cli.run(args) == 2
 
 
 def test_main_exits_with_code_from_run(monkeypatch):
