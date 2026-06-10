@@ -168,15 +168,15 @@ def create_parser():
     )
     parser.add_argument(
         "--timeout",
-        default=None,
         type=int,
+        default=None,
         metavar="SECS",
-        help="timeout (requires --wait) (default: 0)",
+        help="timeout (requires --wait) (default: no timeout)",
     )
     parser.add_argument(
         "--poll-interval",
-        default=None,
         type=int,
+        default=None,
         metavar="SECS",
         help="polling interval (requires --wait) (default: 5)",
     )
@@ -188,15 +188,25 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
+def validate_args(args):
+    if args.timeout is not None and args.timeout < 1:
+        return "Error: --timeout must be >= 1"
+    if args.poll_interval is not None and args.poll_interval < 1:
+        return "Error: --poll-interval must be >= 1"
+    if not args.wait:
+        if args.poll_interval is not None:
+            return "Error: --poll-interval requires --wait"
+        if args.timeout is not None:
+            return "Error: --timeout requires --wait"
+    return None
+
+
 def run(args):
     try:
-        if not args.wait:
-            if args.poll_interval is not None:
-                logger.error("Error: --poll-interval requires --wait")
-                return 2
-            if args.timeout is not None:
-                logger.error("Error: --timeout requires --wait")
-                return 2
+        error = validate_args(args)
+        if error:
+            logger.error(error)
+            return 2
         load_dotenv()
         access_token = require_env("ACCESS_TOKEN")
         api_url = require_env("API_URL")

@@ -77,7 +77,6 @@ class TalendClient:
         return execution_id
 
     def run(self, job_id, wait=False, timeout=None, poll_interval=None):
-        timeout = timeout if timeout is not None else 0
         poll_interval = poll_interval if poll_interval is not None else 5
         status = "unknown"
         exec_id = self.run_job(job_id)

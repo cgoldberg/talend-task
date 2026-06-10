@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 
+import argparse
 import sys
 from unittest.mock import Mock
 
@@ -56,6 +57,65 @@ def test_parse_flags():
     assert args.timeout == 30
     assert args.poll_interval == 10
     assert args.job == "job1"
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        pytest.param(
+            argparse.Namespace(timeout=None, poll_interval=None, wait=False),
+            id="defaults",
+        ),
+        pytest.param(
+            argparse.Namespace(timeout=1, poll_interval=None, wait=True),
+            id="wait_timeout",
+        ),
+        pytest.param(
+            argparse.Namespace(timeout=None, poll_interval=1, wait=True),
+            id="wait_poll",
+        ),
+        pytest.param(
+            argparse.Namespace(timeout=1, poll_interval=1, wait=True),
+            id="wait_timeout_and_poll",
+        ),
+    ],
+)
+def test_validate_args_valid(args):
+    assert cli.validate_args(args) is None
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        pytest.param(
+            argparse.Namespace(timeout=0, poll_interval=None, wait=True),
+            id="timeout_zero",
+        ),
+        pytest.param(
+            argparse.Namespace(timeout=None, poll_interval=0, wait=True),
+            id="poll_zero",
+        ),
+        pytest.param(
+            argparse.Namespace(timeout=-1, poll_interval=None, wait=True),
+            id="timeout_negative",
+        ),
+        pytest.param(
+            argparse.Namespace(timeout=None, poll_interval=-1, wait=True),
+            id="poll_negative",
+        ),
+        pytest.param(
+            argparse.Namespace(timeout=1, poll_interval=None, wait=False),
+            id="timeout_requires_wait",
+        ),
+        pytest.param(
+            argparse.Namespace(timeout=None, poll_interval=1, wait=False),
+            id="poll_requires_wait",
+        ),
+    ],
+)
+def test_validate_args_invalid(args):
+    result = cli.validate_args(args)
+    assert isinstance(result, str)
 
 
 def test_run_job_no_wait():
@@ -235,6 +295,24 @@ def test_run_returns_2_on_missing_env_var(monkeypatch, missing_var):
     monkeypatch.setattr(cli, "load_dotenv", lambda: None)
     monkeypatch.delenv(missing_var, raising=False)
     args = cli.parse_args(["--job", "job1"])
+    assert cli.run(args) == 2
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["--timeout", "30"],
+        ["--poll-interval", "10"],
+        ["--timeout", "-1"],
+        ["--poll-interval", "-1"],
+        ["--timeout", "30", "--poll-interval", "10"],
+    ],
+)
+def test_run_returns_2_on_invalid_args(monkeypatch, argv):
+    fake_client = Mock()
+    monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
+    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: "execution_successful")
+    args = cli.parse_args(argv)
     assert cli.run(args) == 2
 
 

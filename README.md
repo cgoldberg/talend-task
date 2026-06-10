@@ -64,8 +64,8 @@ After installation, the `talend_task` command is available in your shell.
 ##### CLI Options:
 
 ```
-$ talend_task -h
-usage: talend_task [-h] [--debug] [--wait] [--job NAME] [--poll-interval SECS]
+$ talend_task --help
+usage: talend_task [-h] [--debug] [--wait] [--job NAME] [--timeout SECS] [--poll-interval SECS]
 
 Talend Cloud CLI
 
@@ -74,7 +74,7 @@ options:
   --debug               enable debug logging
   --wait                wait for job to complete and return status
   --job NAME            job name
-  --timeout SECS        timeout (requires --wait) (default: 0)
+  --timeout SECS        timeout (requires --wait) (default: no timeout)
   --poll-interval SECS  polling interval (requires --wait) (default: 5)
 ```
 
