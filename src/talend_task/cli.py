@@ -19,10 +19,14 @@ logger = logging.getLogger(__name__)
 console = Console()
 
 
+class ConfigError(Exception):
+    pass
+
+
 def require_env(name):
     value = os.getenv(name)
     if not value:
-        raise ValueError(f"Missing required environment variable: {name}")
+        raise ConfigError(f"Missing required environment variable: {name}")
     return value
 
 
@@ -186,12 +190,13 @@ def parse_args(argv=None):
 
 def run(args):
     try:
-        if args.poll_interval is not None and not args.wait:
-            logger.error("Error: --poll-interval requires --wait")
-            return 1
-        if args.timeout is not None and not args.wait:
-            logger.error("Error: --timeout requires --wait")
-            return 1
+        if not args.wait:
+            if args.poll_interval is not None:
+                logger.error("Error: --poll-interval requires --wait")
+                return 2
+            if args.timeout is not None:
+                logger.error("Error: --timeout requires --wait")
+                return 2
         load_dotenv()
         access_token = require_env("ACCESS_TOKEN")
         api_url = require_env("API_URL")
@@ -209,6 +214,9 @@ def run(args):
             logger.info("Execution finished")
         if status != "execution_successful":
             return 1
+    except ConfigError as e:
+        logger.error("Error: %s", e)
+        return 2
     except (ValueError, TimeoutError) as e:
         logger.error("Error: %s", e)
         return 1
