@@ -9,8 +9,12 @@ import pytest
 from talend_task.talend_client import TalendClient
 
 
-def test_client_sets_headers():
-    client = TalendClient("https://api.example.com/", "abc123")
+@pytest.fixture
+def client():
+    return TalendClient("https://api.example.com/", "abc123")
+
+
+def test_client_sets_headers(client):
     assert client.session.headers["Authorization"] == "Bearer abc123"
     assert client.session.headers["Content-Type"] == "application/json"
 
@@ -61,51 +65,47 @@ def test_get_execution_status():
     client = TalendClient("https://api.example.com/", "token")
     client._get = Mock(return_value={"status": "executing"})
     assert client.get_execution_status("exec-123") == "executing"
-    client._get.assert_called_once_with(
-        "/executions/exec-123",
-    )
+    client._get.assert_called_once_with("/executions/exec-123")
 
 
-def test_run_job_returns_execution_id():
-    client = TalendClient("https://api.example.com/", "token")
+def test_run_job_returns_execution_id(client):
     client._post = Mock(return_value={"executionId": "exec-123"})
     execution_id = client.run_job("job-456")
     assert execution_id == "exec-123"
-    client._post.assert_called_once_with(
-        "/executions",
-        {"executable": "job-456"},
-    )
+    client._post.assert_called_once_with("/executions", {"executable": "job-456"})
 
 
-def test_run_without_wait_returns_unknown_status():
-    client = TalendClient("https://api.example.com/", "token")
+def test_run_polls_until_completion_when_waiting(client, monkeypatch):
     client.run_job = Mock(return_value="exec-123")
-    status = client.run("job-456")
-    assert status == "unknown"
-
-
-def test_run_waits_until_completion(monkeypatch):
-    client = TalendClient("https://api.example.com/", "token")
-    client.run_job = Mock(return_value="exec-123")
-    statuses = ("dispatching", "executing", "executing", "execution_successful")
+    statuses = ("dispatching", "executing", "execution_successful")
     client.get_execution_status = Mock(side_effect=statuses)
     sleep = Mock()
     monkeypatch.setattr("talend_task.talend_client.time.sleep", sleep)
     status = client.run("job-456", wait=True, poll_interval=1)
     assert status == "execution_successful"
-    assert sleep.call_args_list == [call(1)] * 3
+    assert sleep.call_args_list == [call(1), call(1)]
 
 
-def test_run_uses_default_poll_interval(monkeypatch):
-    client = TalendClient("https://api.example.com/", "token")
+def test_run_does_not_poll_and_returns_unknown(client):
     client.run_job = Mock(return_value="exec-123")
-    statuses = ("executing", "execution_successful")
+    client.get_execution_status = Mock()
+    status1 = client.run("job-123")
+    status2 = client.run("job-456", wait=False)
+    expected_status = "unknown"
+    assert status1 == expected_status
+    assert status2 == expected_status
+    client.get_execution_status.assert_not_called()
+
+
+def test_run_uses_default_polling_interval(client, monkeypatch):
+    client.run_job = Mock(return_value="exec-123")
+    statuses = ("dispatching", "executing", "execution_successful")
     client.get_execution_status = Mock(side_effect=statuses)
     sleep = Mock()
     monkeypatch.setattr("talend_task.talend_client.time.sleep", sleep)
-    status = client.run("job-456", wait=True, poll_interval=None)
+    status = client.run("job-456", wait=True, timeout=None, poll_interval=None)
     assert status == "execution_successful"
-    sleep.assert_called_once_with(5)
+    assert sleep.call_args_list == [call(5), call(5)]
 
 
 def test_run_times_out(monkeypatch):
