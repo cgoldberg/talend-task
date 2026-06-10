@@ -19,8 +19,7 @@ def test_client_sets_headers(client):
     assert client.session.headers["Content-Type"] == "application/json"
 
 
-def test_get_calls_session_get():
-    client = TalendClient("https://api.example.com/", "token")
+def test_get_calls_session_get(client):
     response = Mock()
     response.json.return_value = {"hello": "world"}
     client.session.get = Mock(return_value=response)
@@ -33,8 +32,7 @@ def test_get_calls_session_get():
     response.raise_for_status.assert_called_once()
 
 
-def test_post_calls_session_post():
-    client = TalendClient("https://api.example.com/", "token")
+def test_post_calls_session_post(client):
     response = Mock()
     response.json.return_value = {"id": 123}
     client.session.post = Mock(return_value=response)
@@ -48,8 +46,7 @@ def test_post_calls_session_post():
     )
 
 
-def test_get_jobs_returns_name_and_executable_pairs():
-    client = TalendClient("https://api.example.com/", "token")
+def test_get_jobs_returns_name_and_executable_pairs(client):
     response_payload = {
         "items": [
             {"name": "job1", "executable": "abc"},
@@ -61,8 +58,7 @@ def test_get_jobs_returns_name_and_executable_pairs():
     assert client.get_jobs() == expected
 
 
-def test_get_execution_status():
-    client = TalendClient("https://api.example.com/", "token")
+def test_get_execution_status(client):
     client._get = Mock(return_value={"status": "executing"})
     assert client.get_execution_status("exec-123") == "executing"
     client._get.assert_called_once_with("/executions/exec-123")
@@ -108,8 +104,7 @@ def test_run_uses_default_polling_interval(monkeypatch, client):
     assert sleep.call_args_list == [call(5), call(5)]
 
 
-def test_run_times_out(monkeypatch):
-    client = TalendClient("https://api.example.com/", "token")
+def test_run_times_out(monkeypatch, client):
     job_name = "job-456"
     timeout = 5
     client.run_job = Mock(return_value="exec-123")
