@@ -4,7 +4,6 @@
 
 import logging
 import time
-from urllib.parse import urljoin
 
 import requests
 
@@ -17,8 +16,9 @@ HTTP_TIMEOUT = 30
 class TalendClient:
     def __init__(self, api_url, access_token):
         self.access_token = access_token
-        self.base_url = urljoin(api_url, "processing")
+        self.base_url = api_url.rstrip("/") + "/processing"
         self.session = AuthSession(access_token)
+        self._jobs_cache = None
 
     def _get(self, path):
         resp = self.session.get(
@@ -37,9 +37,23 @@ class TalendClient:
         resp.raise_for_status()
         return resp.json()
 
+    def _jobs(self):
+        if self._jobs_cache is None:
+            result = self._get("/executables/tasks")
+            self._jobs_cache = result.get("items", [])
+        return self._jobs_cache
+
     def get_jobs(self):
-        result = self._get("/executables/tasks")
-        return [(item["name"], item["executable"]) for item in result["items"]]
+        return [(item["name"], item["executable"]) for item in self._jobs()]
+
+    def get_job_id(self, job_name):
+        job_id = next(
+            (item["executable"] for item in self._jobs() if item["name"] == job_name),
+            None,
+        )
+        if job_id is None:
+            raise ValueError(f"Unknown job: {job_name}")
+        return job_id
 
     def get_execution_status(self, execution_id):
         """Get current execution status.
@@ -64,10 +78,7 @@ class TalendClient:
         return status
 
     def run_job(self, job_id):
-        result = self._post(
-            "/executions",
-            {"executable": job_id},
-        )
+        result = self._post("/executions", {"executable": job_id})
         execution_id = result["executionId"]
         logger.info(
             "Job submitted\n    jobId       : %s\n    executionId : %s",
@@ -116,7 +127,7 @@ class LoggedSession(requests.Session):
                 elapsed_ms,
             )
             logger.debug("Headers: %s", dict(resp.headers))
-            logger.debug("Body: %s", resp.text[:1000])
+            logger.debug("Body: %s", resp.text[:2000])
             return resp
         except requests.RequestException as e:
             elapsed_ms = (time.monotonic() - start) * 1000

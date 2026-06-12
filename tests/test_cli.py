@@ -153,7 +153,7 @@ def test_run_job_wait(monkeypatch):
 
 def test_run_cli_named_job_success():
     client = Mock()
-    jobs = [("job1", "id1"), ("job2", "id2")]
+    client.get_job_id.return_value = "id2"
     run_job_mock = Mock(return_value=("execution_successful", None))
     status = cli.run_cli(
         job_name="job2",
@@ -161,10 +161,11 @@ def test_run_cli_named_job_success():
         timeout=None,
         poll_interval=None,
         client=client,
-        jobs=jobs,
+        jobs=None,
         run_job_fn=run_job_mock,
     )
     assert status == "execution_successful"
+    client.get_job_id.assert_called_once_with("job2")
     run_job_mock.assert_called_once_with(
         client,
         "id2",
@@ -176,7 +177,7 @@ def test_run_cli_named_job_success():
 
 def test_run_cli_named_job_fail():
     client = Mock()
-    jobs = [("job1", "id1"), ("job2", "id2")]
+    client.get_job_id.return_value = "id1"
     run_job_mock = Mock(return_value=("execution_failed", None))
     status = cli.run_cli(
         job_name="job1",
@@ -184,10 +185,11 @@ def test_run_cli_named_job_fail():
         timeout=None,
         poll_interval=None,
         client=client,
-        jobs=jobs,
+        jobs=None,
         run_job_fn=run_job_mock,
     )
     assert status == "execution_failed"
+    client.get_job_id.assert_called_once_with("job1")
     run_job_mock.assert_called_once_with(
         client,
         "id1",
@@ -199,17 +201,18 @@ def test_run_cli_named_job_fail():
 
 def test_run_cli_invalid_job():
     client = Mock()
-    jobs = [("job1", "id1")]
     unknown_job = "does_not_exist"
-    with pytest.raises(ValueError, match=f"Invalid job: {unknown_job}"):
+    client.get_job_id.side_effect = ValueError(f"Unknown job: {unknown_job}")
+    with pytest.raises(ValueError, match=f"Unknown job: {unknown_job}"):
         cli.run_cli(
             job_name=unknown_job,
             wait=False,
             timeout=None,
             poll_interval=None,
             client=client,
-            jobs=jobs,
+            jobs=None,
         )
+    client.get_job_id.assert_called_once_with(unknown_job)
 
 
 def test_run_cli_interactive_selection():

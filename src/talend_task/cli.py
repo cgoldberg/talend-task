@@ -84,9 +84,7 @@ def run_cli(
     if run_job_fn is None:
         run_job_fn = run_job
     if job_name:
-        if job_name not in (job[0] for job in jobs):
-            raise ValueError(f"Invalid job: {job_name}")
-        job_id = next(job[1] for job in jobs if job[0] == job_name)
+        job_id = client.get_job_id(job_name)
         logger.info("Executing job: %s", job_name)
         status, elapsed_time = run_job_fn(
             client,
