@@ -58,6 +58,29 @@ def test_get_jobs_returns_name_and_executable_pairs(client):
     assert client.get_jobs() == expected
 
 
+def test_get_job_id(client):
+    response_payload = {
+        "items": [
+            {"name": "job1", "executable": "abc"},
+            {"name": "job2", "executable": "xyz"},
+        ]
+    }
+    client._get = Mock(return_value=response_payload)
+    assert client.get_job_id("job2") == "xyz"
+
+
+def test_get_job_id_raises_for_unknown_job(client):
+    response_payload = {
+        "items": [
+            {"name": "job1", "executable": "abc"},
+            {"name": "job2", "executable": "xyz"},
+        ]
+    }
+    client._get = Mock(return_value=response_payload)
+    with pytest.raises(ValueError, match="Unknown job: job3"):
+        client.get_job_id("job3")
+
+
 def test_get_execution_status(client):
     client._get = Mock(return_value={"status": "executing"})
     assert client.get_execution_status("exec-123") == "executing"
