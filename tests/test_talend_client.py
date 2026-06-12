@@ -87,6 +87,47 @@ def test_get_execution_status(client):
     client._get.assert_called_once_with("/executions/exec-123")
 
 
+def test_get_executions_sorts_and_limits(client):
+    fake_result = {
+        "items": [
+            {
+                "taskVersion": "1.1",
+                "runtime": {"type": "REMOTE_ENGINE"},
+                "executionStatus": "EXECUTION_SUCCESS",
+                "startTimestamp": "2026-06-09T10:00:00.000Z",
+                "finishTimestamp": "2026-06-09T10:10:00.000Z",
+                "userId": "user1",
+            },
+            {
+                "taskVersion": "1.1",
+                "runtime": {"type": "CLOUD"},
+                "executionStatus": "EXECUTION_FAILED",
+                "startTimestamp": "2026-06-09T12:00:00.000Z",
+                "finishTimestamp": "2026-06-09T12:05:00.000Z",
+                "userId": "user2",
+            },
+            {
+                "taskVersion": "1.1",
+                "runtime": {"type": "REMOTE_ENGINE"},
+                "executionStatus": "EXECUTION_RUNNING",
+                "startTimestamp": "2026-06-09T11:00:00.000Z",
+                "finishTimestamp": None,
+                "userId": "user3",
+            },
+        ]
+    }
+    client._get = Mock(return_value=fake_result)
+    job_id = "abc123"
+    executions = client.get_executions(job_id, limit=2)
+    client._get.assert_called_once_with(f"/executables/tasks/{job_id}/executions")
+    assert isinstance(executions, list)
+    assert len(executions) == 2
+    assert [r["start_timestamp"] for r in executions] == [
+        "2026-06-09T12:00:00.000Z",
+        "2026-06-09T11:00:00.000Z",
+    ]
+
+
 def test_run_job_returns_execution_id(client):
     client._post = Mock(return_value={"executionId": "exec-123"})
     execution_id = client.run_job("job-456")

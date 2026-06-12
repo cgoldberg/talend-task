@@ -7,11 +7,13 @@ import logging
 import os
 import sys
 import time
+from datetime import datetime
 
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 
 from .talend_client import TalendClient
 
@@ -30,10 +32,61 @@ def require_env(name):
     return value
 
 
+def format_iso_timestamp(timestamp):
+    dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    return dt.strftime("%m/%d/%Y %I:%M %p")
+
+
 def convert_time(seconds):
     mins, secs = divmod(seconds, 60)
     hours, mins = divmod(mins, 60)
     return f"{hours:02.0f}:{mins:02.0f}:{secs:02.0f}"
+
+
+def compute_duration(start_timestamp, end_timestamp):
+    fmt = "%Y-%m-%dT%H:%M:%S.%fZ"
+    start_dt = datetime.strptime(start_timestamp, fmt)
+    end_dt = datetime.strptime(end_timestamp, fmt)
+    elapsed_secs = (end_dt - start_dt).total_seconds()
+    return convert_time(elapsed_secs)
+
+
+def show_activity(job_name, executions):
+    console.print()
+    table = Table(title=f"[bold]Job Activity: {job_name}[/bold]")
+    table.add_column("Status")
+    table.add_column("End Time", style="cyan")
+    table.add_column("Duration", style="yellow")
+    table.add_column("Version", style="cyan")
+    table.add_column("Runtime", style="white")
+    table.add_column("Triggered By", style="white")
+    for execution in executions:
+        status = execution["execution_status"].removeprefix("EXECUTION_")
+        if not execution.get("finish_timestamp"):
+            status_text = Text(status, style="yellow")
+        elif "SUCCESS" in status:
+            status_text = Text(status, style="green")
+        elif "FAIL" in status:
+            status_text = Text(status, style="red")
+        else:
+            status_text = Text(status, style="white")
+        if execution.get("finish_timestamp"):
+            start_timestamp = execution["start_timestamp"]
+            end_timestamp = execution["finish_timestamp"]
+            end_time = format_iso_timestamp(end_timestamp)
+            duration = compute_duration(start_timestamp, end_timestamp)
+        else:
+            end_time = ""
+            duration = ""
+        table.add_row(
+            status_text,
+            end_time,
+            duration,
+            execution["task_version"],
+            execution["runtime_type"],
+            execution["user_id"],
+        )
+    console.print(table)
 
 
 def select_job(jobs, input_fn=input):
@@ -44,7 +97,7 @@ def select_job(jobs, input_fn=input):
     for num, job in enumerate(jobs, 1):
         table.add_row(str(num), job[0])
     console.print(table)
-    job_number = input_fn("\nSelect a job number to run: ")
+    job_number = input_fn("\nSelect a job number: ")
     try:
         job_number = int(job_number)
         if job_number < 1 or job_number > len(jobs):
@@ -76,6 +129,7 @@ def run_cli(
     wait,
     timeout,
     poll_interval,
+    activity,
     client,
     jobs,
     input_fn=input,
@@ -83,8 +137,14 @@ def run_cli(
 ):
     if run_job_fn is None:
         run_job_fn = run_job
+
     if job_name:
         job_id = client.get_job_id(job_name)
+        if activity:
+            job_id = client.get_job_id(job_name)
+            executions = client.get_executions(job_id)
+            show_activity(job_name, executions)
+            return
         logger.info("Executing job: %s", job_name)
         status, elapsed_time = run_job_fn(
             client,
@@ -95,9 +155,14 @@ def run_cli(
         )
         if wait:
             logger.info("Duration: %s", elapsed_time)
+            logger.info("Execution finished")
         return status
     job_name, job_id = select_job(jobs, input_fn=input_fn)
-    console.print()
+    if activity:
+        job_id = client.get_job_id(job_name)
+        executions = client.get_executions(job_id)
+        show_activity(job_name, executions)
+        return
     console.print(
         Panel.fit(
             f"[bold green]{job_name}[/bold green]",
@@ -157,7 +222,14 @@ def create_parser():
     parser.add_argument(
         "--wait",
         action="store_true",
+        default=None,
         help="wait for job to complete and return status",
+    )
+    parser.add_argument(
+        "--activity",
+        action="store_true",
+        help="show recent executions without "
+        + "running job (incompatible with --wait)",
     )
     parser.add_argument(
         "--job",
@@ -169,14 +241,14 @@ def create_parser():
         type=int,
         default=None,
         metavar="SECS",
-        help="timeout (requires --wait) (default: no timeout)",
+        help="timeout (requires --wait, default: none)",
     )
     parser.add_argument(
         "--poll-interval",
         type=int,
         default=None,
         metavar="SECS",
-        help="polling interval (requires --wait) (default: 5)",
+        help="polling interval (requires --wait, default: 5)",
     )
     return parser
 
@@ -191,7 +263,9 @@ def validate_args(args):
         return "Error: --timeout must be >= 1"
     if args.poll_interval is not None and args.poll_interval < 1:
         return "Error: --poll-interval must be >= 1"
-    if not args.wait:
+    if args.activity and args.wait is not None:
+        return "Error: --activity is incompatible with --wait"
+    if not args.activity and args.wait is None:
         if args.poll_interval is not None:
             return "Error: --poll-interval requires --wait"
         if args.timeout is not None:
@@ -215,12 +289,11 @@ def run(args):
             timeout=args.timeout,
             wait=args.wait,
             poll_interval=args.poll_interval,
+            activity=args.activity,
             client=client,
             jobs=jobs,
         )
-        if args.wait:
-            logger.info("Execution finished")
-        if status != "execution_successful":
+        if status not in ("execution_successful", "unknown"):
             return 1
     except ConfigError as e:
         logger.error("Error: %s", e)
