@@ -65,7 +65,8 @@ After installation, the `talend_task` command is available in your shell.
 
 ```
 $ talend_task --help
-usage: talend_task [-h] [--debug] [--wait] [--job NAME] [--timeout SECS] [--poll-interval SECS]
+usage: talend_task [-h] [--debug] [--wait] [--activity] [--job NAME] [--timeout SECS]
+                   [--poll-interval SECS]
 
 Talend Cloud CLI
 
@@ -73,9 +74,10 @@ options:
   -h, --help            show this help message and exit
   --debug               enable debug logging
   --wait                wait for job to complete and return status
+  --activity            show recent executions without running job (incompatible with --wait)
   --job NAME            job name
-  --timeout SECS        timeout (requires --wait) (default: no timeout)
-  --poll-interval SECS  polling interval (requires --wait) (default: 5)
+  --timeout SECS        timeout (requires --wait, default: none)
+  --poll-interval SECS  polling interval (requires --wait, default: 5)
 ```
 
 ----
@@ -109,7 +111,7 @@ ACCESS_TOKEN=<access-token>
 
 #### Direct mode
 
-Run a specific job immediately by providing `--job <name>`:
+Run a job immediately by providing `--job <name>`:
 
 ```bash
 talend_task --job Job1
@@ -121,12 +123,6 @@ Run the CLI without specifying a job to select and execute one from a menu:
 
 ```bash
 talend_task
-```
-
-Optionally, add the `--wait` flag in either mode to wait for the job to complete and return its final status.
-
-```bash
-talend_task --wait --job Job1
 ```
 
 ----

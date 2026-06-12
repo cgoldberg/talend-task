@@ -77,6 +77,25 @@ class TalendClient:
         status = result["status"]
         return status
 
+    def get_executions(self, job_id, limit=20):
+        result = self._get(f"/executables/tasks/{job_id}/executions")
+        items = result.get("items", [])
+        executions = [
+            {
+                "execution_status": item.get("executionStatus"),
+                "start_timestamp": item.get("startTimestamp"),
+                "finish_timestamp": item.get("finishTimestamp"),
+                "task_version": item.get("taskVersion"),
+                "runtime_type": item.get("runtime", {}).get("type"),
+                "user_id": item.get("userId"),
+            }
+            for item in items
+        ]
+        executions = sorted(
+            executions, key=lambda x: x.get("start_timestamp") or "", reverse=True
+        )[:limit]
+        return executions
+
     def run_job(self, job_id):
         result = self._post("/executions", {"executable": job_id})
         execution_id = result["executionId"]

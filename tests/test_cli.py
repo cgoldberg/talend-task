@@ -11,6 +11,18 @@ import pytest
 from talend_task import cli
 
 
+def _make_args(**kwargs):
+    defaults = dict(
+        job=None,
+        timeout=None,
+        poll_interval=None,
+        wait=True,
+        activity=False,
+    )
+    defaults.update(kwargs)
+    return argparse.Namespace(**defaults)
+
+
 @pytest.fixture(autouse=True)
 def default_env(monkeypatch):
     monkeypatch.setenv("ACCESS_TOKEN", "token")
@@ -40,80 +52,185 @@ def test_convert_time(seconds, expected_time):
     assert cli.convert_time(seconds) == expected_time
 
 
-def test_parse_defaults():
-    args = cli.parse_args([])
-    assert args.debug is False
-    assert args.wait is False
-    assert args.job is None
-    assert args.timeout is None
-    assert args.poll_interval is None
-
-
-def test_parse_flags():
-    args = cli.parse_args(
-        ["--wait", "--timeout", "30", "--poll-interval", "10", "--job", "job1"]
-    )
-    assert args.wait is True
-    assert args.timeout == 30
-    assert args.poll_interval == 10
-    assert args.job == "job1"
+@pytest.mark.parametrize(
+    ("start_timestamp", "end_timestamp", "expected"),
+    [
+        pytest.param(
+            "2026-06-12T12:00:00.000Z",
+            "2026-06-12T12:00:30.000Z",
+            "00:00:30",
+            id="30_secs",
+        ),
+        pytest.param(
+            "2026-06-12T12:00:00.000Z",
+            "2026-06-12T12:05:00.000Z",
+            "00:05:00",
+            id="5_mins",
+        ),
+        pytest.param(
+            "2026-06-12T12:00:00.000Z",
+            "2026-06-12T13:00:00.000Z",
+            "01:00:00",
+            id="1_hr",
+        ),
+    ],
+)
+def test_compute_duration(start_timestamp, end_timestamp, expected):
+    assert cli.compute_duration(start_timestamp, end_timestamp) == expected
 
 
 @pytest.mark.parametrize(
-    "args",
+    ("timestamp", "expected"),
     [
         pytest.param(
-            argparse.Namespace(timeout=None, poll_interval=None, wait=False),
+            "2026-06-12T12:45:15.538Z",
+            "06/12/2026 12:45 PM",
+            id="timestamp1",
+        ),
+        pytest.param(
+            "2026-01-01T00:00:00.000Z",
+            "01/01/2026 12:00 AM",
+            id="timestamp2",
+        ),
+        pytest.param(
+            "2026-12-31T23:59:59.999Z",
+            "12/31/2026 11:59 PM",
+            id="timestamp3",
+        ),
+    ],
+)
+def test_format_iso_timestamp(timestamp, expected):
+    assert cli.format_iso_timestamp(timestamp) == expected
+
+
+@pytest.mark.parametrize(
+    ("args_list", "expected"),
+    [
+        pytest.param(
+            [],
+            dict(
+                wait=None,
+                activity=False,
+                timeout=None,
+                poll_interval=None,
+                job=None,
+            ),
             id="defaults",
         ),
         pytest.param(
-            argparse.Namespace(timeout=1, poll_interval=None, wait=True),
-            id="wait_timeout",
+            ["--activity", "--job", "job1"],
+            dict(
+                wait=None,
+                activity=True,
+                timeout=None,
+                poll_interval=None,
+                job="job1",
+            ),
+            id="activity_no_wait",
         ),
         pytest.param(
-            argparse.Namespace(timeout=None, poll_interval=1, wait=True),
-            id="wait_poll",
-        ),
-        pytest.param(
-            argparse.Namespace(timeout=1, poll_interval=1, wait=True),
-            id="wait_timeout_and_poll",
+            ["--wait", "--timeout", "30", "--poll-interval", "10", "--job", "job1"],
+            dict(
+                wait=True,
+                activity=False,
+                timeout=30,
+                poll_interval=10,
+                job="job1",
+            ),
+            id="timeout_poll_with_wait",
         ),
     ],
 )
-def test_validate_args_valid(args):
-    assert cli.validate_args(args) is None
+def test_parse_flags(args_list, expected):
+    args = cli.parse_args(args_list)
+    for key, value in expected.items():
+        assert getattr(args, key) == value
 
 
 @pytest.mark.parametrize(
-    "args",
+    "overrides",
     [
         pytest.param(
-            argparse.Namespace(timeout=0, poll_interval=None, wait=True),
-            id="timeout_zero",
+            {},
+            id="defaults",
         ),
         pytest.param(
-            argparse.Namespace(timeout=None, poll_interval=0, wait=True),
-            id="poll_zero",
+            {"timeout": 1, "wait": True},
+            id="wait_timeout",
         ),
         pytest.param(
-            argparse.Namespace(timeout=-1, poll_interval=None, wait=True),
-            id="timeout_negative",
+            {"poll_interval": 1, "wait": True},
+            id="wait_poll",
         ),
         pytest.param(
-            argparse.Namespace(timeout=None, poll_interval=-1, wait=True),
-            id="poll_negative",
+            {"timeout": 1, "poll_interval": 1, "wait": True},
+            id="wait_timeout_poll",
         ),
         pytest.param(
-            argparse.Namespace(timeout=1, poll_interval=None, wait=False),
-            id="timeout_requires_wait",
-        ),
-        pytest.param(
-            argparse.Namespace(timeout=None, poll_interval=1, wait=False),
-            id="poll_requires_wait",
+            {"activity": True},
+            id="activity_no_wait",
         ),
     ],
 )
-def test_validate_args_invalid(args):
+def test_validate_args_valid(overrides):
+    base = dict(
+        job=None,
+        timeout=None,
+        poll_interval=None,
+        wait=None,
+        activity=False,
+    )
+    args = argparse.Namespace(**{**base, **overrides})
+    result = cli.validate_args(args)
+    assert result is None
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        pytest.param(
+            {"timeout": 0},
+            id="timeout_zero",
+        ),
+        pytest.param(
+            {"poll_interval": 0},
+            id="poll_zero",
+        ),
+        pytest.param(
+            {"timeout": -1},
+            id="timeout_negative",
+        ),
+        pytest.param(
+            {"poll_interval": -1},
+            id="poll_negative",
+        ),
+        pytest.param(
+            {"timeout": 1},
+            id="timeout_requires_wait",
+        ),
+        pytest.param(
+            {"poll_interval": 1},
+            id="poll_requires_wait",
+        ),
+        pytest.param(
+            {"activity": True, "wait": True},
+            id="activity_wait_provided",
+        ),
+        pytest.param(
+            {"activity": True, "wait": False},
+            id="activity_wait_false",
+        ),
+    ],
+)
+def test_validate_args_invalid(overrides):
+    base = dict(
+        job=None,
+        timeout=None,
+        poll_interval=None,
+        wait=None,
+        activity=False,
+    )
+    args = argparse.Namespace(**{**base, **overrides})
     result = cli.validate_args(args)
     assert isinstance(result, str)
 
@@ -160,6 +277,7 @@ def test_run_cli_named_job_success():
         wait=False,
         timeout=None,
         poll_interval=None,
+        activity=False,
         client=client,
         jobs=None,
         run_job_fn=run_job_mock,
@@ -184,6 +302,7 @@ def test_run_cli_named_job_fail():
         wait=False,
         timeout=None,
         poll_interval=None,
+        activity=False,
         client=client,
         jobs=None,
         run_job_fn=run_job_mock,
@@ -209,6 +328,7 @@ def test_run_cli_invalid_job():
             wait=False,
             timeout=None,
             poll_interval=None,
+            activity=False,
             client=client,
             jobs=None,
         )
@@ -227,6 +347,7 @@ def test_run_cli_interactive_selection():
         wait=False,
         timeout=None,
         poll_interval=None,
+        activity=False,
         client=client,
         jobs=jobs,
         input_fn=fake_input,
@@ -254,6 +375,7 @@ def test_run_cli_invalid_selection():
             wait=False,
             timeout=None,
             poll_interval=None,
+            activity=False,
             client=client,
             jobs=jobs,
             input_fn=fake_input,
