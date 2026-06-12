@@ -43,7 +43,9 @@
 ## About
 
 `talend_task` is a Python CLI for running [Talend Cloud](https://talend.com)
-jobs, including ETL pipelines, workflows, and tasks.
+jobs, including ETL pipelines, workflows, and tasks. It uses the Talend
+[Processing API](https://talend.qlik.dev/apis/processing/2021-03) to trigger
+job runs and monitor status.
 
 Select a job interactively, or specify one directly with `--job`.
 

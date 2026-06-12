@@ -10,6 +10,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 
+TALEND_API_VERSION = "2021-03"
 HTTP_TIMEOUT = 30
 
 
@@ -58,20 +59,23 @@ class TalendClient:
     def get_execution_status(self, execution_id):
         """Get current execution status.
 
-        Either the execution request is rejected before it enters the runtime
-        pipeline, or it follows a single linear execution flow that results in
-        exactly one terminal state.
+        Jobs are dispatched and validated, then executed if accepted, and
+        finally transition to a terminal state indicating success, failure,
+        rejection, or termination reason.
 
-        Execution lifecycle:
+        Execution lifecycle of a task from request to completion:
 
-            execution_rejected
-
-            OR
-
-            dispatching → executing → execution_successful
-                                    → execution_failed
-                                    → execution_canceled
-                                    → execution_terminated
+        REQUEST
+           ↓
+        dispatching
+           ├── deploy_failed
+           ├── execution_rejected
+           └── executing
+                   ├── execution_successful
+                   ├── execution_failed
+                   ├── terminated
+                   ├── terminated_timeout
+                   └── terminated_shutdown
         """
         result = self._get(f"/executions/{execution_id}")
         status = result["status"]
@@ -173,5 +177,6 @@ class AuthSession(LoggedSession):
             {
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json",
+                "talend-version": TALEND_API_VERSION
             }
         )
