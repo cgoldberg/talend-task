@@ -258,21 +258,21 @@ def parse_args(argv=None):
 
 def validate_args(args):
     if args.timeout is not None and args.timeout < 1:
-        return "Error: --timeout must be >= 1"
+        return "--timeout must be >= 1"
     if args.poll_interval is not None and args.poll_interval < 1:
-        return "Error: --poll-interval must be >= 1"
+        return "--poll-interval must be >= 1"
     if args.activity:
         if args.wait:
-            return "Error: --activity cannot be used with --wait"
+            return "--activity cannot be used with --wait"
         if args.poll_interval is not None:
-            return "Error: --activity cannot be used with --poll-interval"
+            return "--activity cannot be used with --poll-interval"
         if args.timeout is not None:
-            return "Error: --activity cannot be used with --timeout"
+            return "--activity cannot be used with --timeout"
         return None  # activity mode is valid on its own
     if args.poll_interval is not None and not args.wait:
-        return "Error: --poll-interval requires --wait"
+        return "--poll-interval requires --wait"
     if args.timeout is not None and not args.wait:
-        return "Error: --timeout requires --wait"
+        return "--timeout requires --wait"
     return None
 
 
@@ -297,16 +297,21 @@ def run(args):
             jobs=jobs,
         )
         if status not in ("execution_successful", "unknown"):
+            logger.exception("Execution not succesful")
             return 1
     except ConfigError as e:
-        logger.error("Error: %s", e)
+        if args.debug:
+            raise
+        logger.error("Config error: %s", e)
         return 2
-    except (ValueError, TimeoutError) as e:
-        logger.error("Error: %s", e)
-        return 1
     except KeyboardInterrupt:
         logger.info("Exiting")
         return 130
+    except Exception:
+        if args.debug:
+            raise
+        logger.exception("Unexpected error")
+        return 1
     return 0
 
 

@@ -240,7 +240,7 @@ def test_validate_args_invalid(overrides):
     )
     args = argparse.Namespace(**{**base, **overrides})
     result = cli.validate_args(args)
-    assert "Error:" in result
+    assert isinstance(result, str)
 
 
 def test_run_job_no_wait():
@@ -434,11 +434,20 @@ def test_run_returns_2_on_missing_env_var(monkeypatch, missing_var):
 
 
 def test_run_returns_2_on_invalid_args(monkeypatch):
-    monkeypatch.setattr(cli, "validate_args", lambda args: "Error: some error")
+    monkeypatch.setattr(cli, "validate_args", lambda args: "some error")
     monkeypatch.setattr(cli, "TalendClient", Mock())
     monkeypatch.setattr(cli, "run_cli", Mock())
     args = Mock()
     assert cli.run(args) == 2
+
+
+def test_run_returns_1_on_unhandled_exception(monkeypatch):
+    fake_client = Mock()
+    fake_client.get_jobs.return_value = [("job1", "id1")]
+    monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
+    monkeypatch.setattr(cli, "run_cli", Mock(side_effect=Exception("boom")))
+    args = cli.parse_args(["--job", "job1"])
+    assert cli.run(args) == 1
 
 
 def test_run_returns_130_on_keyboard_interrupt(monkeypatch):
