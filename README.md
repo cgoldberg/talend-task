@@ -76,7 +76,7 @@ options:
   -h, --help            show this help message and exit
   --debug               enable debug logging
   --wait                wait for job to complete and return status
-  --activity            show recent executions without running job (incompatible with --wait)
+  --activity            show recent runs without executing job (cannot be used with --wait)
   --job NAME            job name
   --timeout SECS        timeout (requires --wait, default: none)
   --poll-interval SECS  polling interval (requires --wait, default: 5)

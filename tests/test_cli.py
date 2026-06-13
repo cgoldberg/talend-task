@@ -109,7 +109,7 @@ def test_format_iso_timestamp(timestamp, expected):
         pytest.param(
             [],
             dict(
-                wait=None,
+                wait=False,
                 activity=False,
                 timeout=None,
                 poll_interval=None,
@@ -120,7 +120,7 @@ def test_format_iso_timestamp(timestamp, expected):
         pytest.param(
             ["--activity", "--job", "job1"],
             dict(
-                wait=None,
+                wait=False,
                 activity=True,
                 timeout=None,
                 poll_interval=None,
@@ -155,20 +155,24 @@ def test_parse_flags(args_list, expected):
             id="defaults",
         ),
         pytest.param(
-            {"timeout": 1, "wait": True},
-            id="wait_timeout",
-        ),
-        pytest.param(
-            {"poll_interval": 1, "wait": True},
-            id="wait_poll",
-        ),
-        pytest.param(
-            {"timeout": 1, "poll_interval": 1, "wait": True},
-            id="wait_timeout_poll",
+            {"wait": True},
+            id="wait_only",
         ),
         pytest.param(
             {"activity": True},
-            id="activity_no_wait",
+            id="activity_only",
+        ),
+        pytest.param(
+            {"wait": True, "timeout": 1},
+            id="wait_timeout",
+        ),
+        pytest.param(
+            {"wait": True, "poll_interval": 1},
+            id="wait_poll",
+        ),
+        pytest.param(
+            {"wait": True, "timeout": 1, "poll_interval": 1},
+            id="wait_timeout_poll",
         ),
     ],
 )
@@ -177,7 +181,7 @@ def test_validate_args_valid(overrides):
         job=None,
         timeout=None,
         poll_interval=None,
-        wait=None,
+        wait=False,
         activity=False,
     )
     args = argparse.Namespace(**{**base, **overrides})
@@ -205,20 +209,24 @@ def test_validate_args_valid(overrides):
             id="poll_negative",
         ),
         pytest.param(
-            {"timeout": 1},
-            id="timeout_requires_wait",
-        ),
-        pytest.param(
-            {"poll_interval": 1},
-            id="poll_requires_wait",
-        ),
-        pytest.param(
             {"activity": True, "wait": True},
-            id="activity_wait_provided",
+            id="activity_with_wait",
         ),
         pytest.param(
-            {"activity": True, "wait": False},
-            id="activity_wait_false",
+            {"activity": True, "timeout": 10},
+            id="activity_with_timeout",
+        ),
+        pytest.param(
+            {"activity": True, "poll_interval": 5},
+            id="activity_with_poll",
+        ),
+        pytest.param(
+            {"timeout": 10, "wait": False},
+            id="timeout_without_wait",
+        ),
+        pytest.param(
+            {"poll_interval": 5, "wait": False},
+            id="poll_without_wait",
         ),
     ],
 )
@@ -227,12 +235,12 @@ def test_validate_args_invalid(overrides):
         job=None,
         timeout=None,
         poll_interval=None,
-        wait=None,
+        wait=False,
         activity=False,
     )
     args = argparse.Namespace(**{**base, **overrides})
     result = cli.validate_args(args)
-    assert isinstance(result, str)
+    assert "Error:" in result
 
 
 def test_run_job_no_wait():
@@ -394,10 +402,12 @@ def test_run_returns_0_on_success(monkeypatch):
 @pytest.mark.parametrize(
     "status",
     [
-        "execution_failed",
-        "execution_canceled",
-        "execution_terminated",
+        "deploy_failed",
         "execution_rejected",
+        "execution_failed",
+        "terminated",
+        "terminated_timeout",
+        "terminated_shutdown",
     ],
 )
 def test_run_returns_1_on_failure(monkeypatch, status):
@@ -431,6 +441,12 @@ def test_run_returns_2_on_missing_env_var(monkeypatch, missing_var):
         ["--timeout", "-1"],
         ["--poll-interval", "-1"],
         ["--timeout", "30", "--poll-interval", "10"],
+        [
+            "--activity",
+            "--wait",
+        ],
+        ["--activity", "--timeout", "30"],
+        ["--activity", "--poll-interval", "1"],
     ],
 )
 def test_run_returns_2_on_invalid_args(monkeypatch, argv):

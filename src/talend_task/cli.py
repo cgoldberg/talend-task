@@ -222,14 +222,12 @@ def create_parser():
     parser.add_argument(
         "--wait",
         action="store_true",
-        default=None,
         help="wait for job to complete and return status",
     )
     parser.add_argument(
         "--activity",
         action="store_true",
-        help="show recent executions without "
-        + "running job (incompatible with --wait)",
+        help="show recent runs without executing job (cannot be used with --wait)",
     )
     parser.add_argument(
         "--job",
@@ -263,13 +261,18 @@ def validate_args(args):
         return "Error: --timeout must be >= 1"
     if args.poll_interval is not None and args.poll_interval < 1:
         return "Error: --poll-interval must be >= 1"
-    if args.activity and args.wait is not None:
-        return "Error: --activity is incompatible with --wait"
-    if not args.activity and args.wait is None:
+    if args.activity:
+        if args.wait:
+            return "Error: --activity cannot be used with --wait"
         if args.poll_interval is not None:
-            return "Error: --poll-interval requires --wait"
+            return "Error: --activity cannot be used with --poll-interval"
         if args.timeout is not None:
-            return "Error: --timeout requires --wait"
+            return "Error: --activity cannot be used with --timeout"
+        return None  # activity mode is valid on its own
+    if args.poll_interval is not None and not args.wait:
+        return "Error: --poll-interval requires --wait"
+    if args.timeout is not None and not args.wait:
+        return "Error: --timeout requires --wait"
     return None
 
 
