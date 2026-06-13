@@ -2,21 +2,44 @@
 # SPDX-License-Identifier: MIT
 
 
+import logging
+import time
 from unittest.mock import Mock, call
 
 import pytest
+import requests
 
-from talend_task.talend_client import TalendClient
+from talend_task.talend_client import (
+    HTTP_TIMEOUT,
+    TALEND_API_VERSION,
+    LoggedSession,
+    TalendClient,
+)
+
+
+class FakeResponse:
+    def __init__(
+        self,
+        status_code=200,
+        url="https://api.example.com",
+        text="OK",
+        headers=None,
+    ):
+        self.status_code = status_code
+        self.url = url
+        self.text = text
+        self.headers = headers or {}
 
 
 @pytest.fixture
 def client():
-    return TalendClient("https://api.example.com/", "abc123")
+    return TalendClient("https://api.example.com", "abc123")
 
 
 def test_client_sets_headers(client):
     assert client.session.headers["Authorization"] == "Bearer abc123"
     assert client.session.headers["Content-Type"] == "application/json"
+    assert client.session.headers["talend-version"] == TALEND_API_VERSION
 
 
 def test_get_calls_session_get(client):
@@ -27,7 +50,7 @@ def test_get_calls_session_get(client):
     assert result == {"hello": "world"}
     client.session.get.assert_called_once_with(
         "https://api.example.com/processing/foo",
-        timeout=30,
+        timeout=HTTP_TIMEOUT,
     )
     response.raise_for_status.assert_called_once()
 
@@ -42,7 +65,7 @@ def test_post_calls_session_post(client):
     client.session.post.assert_called_once_with(
         "https://api.example.com/processing/foo",
         json=payload,
-        timeout=30,
+        timeout=HTTP_TIMEOUT,
     )
 
 
@@ -183,3 +206,38 @@ def test_run_times_out(monkeypatch, client):
         match=f"Job {job_name} did not complete within {timeout} seconds",
     ):
         client.run(job_name, wait=True, timeout=timeout)
+
+
+def test_logged_session_success(monkeypatch, caplog):
+    fake_resp = FakeResponse()
+    session = LoggedSession()
+    times = iter([100.0, 100.123])
+    monkeypatch.setattr(time, "monotonic", lambda: next(times))
+
+    def fake_send(self, request, **kwargs):
+        return fake_resp
+
+    monkeypatch.setattr(requests.Session, "send", fake_send)
+    with caplog.at_level(logging.DEBUG):
+        resp = session.request("GET", "https://api.example.com")
+    assert resp is fake_resp
+    assert "HTTP GET" in caplog.text
+    assert "200" in caplog.text
+    assert "Headers:" in caplog.text
+    assert "Body:" in caplog.text
+
+
+def test_logged_session_request_exception(monkeypatch, caplog):
+    session = LoggedSession()
+    times = iter([100.0, 100.045])
+    monkeypatch.setattr(time, "monotonic", lambda: next(times))
+
+    def fake_send(self, request, **kwargs):
+        raise requests.RequestException("boom")
+
+    monkeypatch.setattr(requests.Session, "send", fake_send)
+    with caplog.at_level(logging.DEBUG):
+        with pytest.raises(requests.RequestException):
+            session.request("GET", "http://test.com")
+    assert "HTTP FAIL GET" in caplog.text
+    assert "boom" in caplog.text

@@ -164,8 +164,7 @@ class LoggedSession(requests.Session):
                 status,
                 elapsed_ms,
                 repr(e),
-                (response_text[:1000] if response_text else None),
-                exc_info=True,
+                (response_text[:2000] if response_text else None),
             )
             raise
 
@@ -177,6 +176,6 @@ class AuthSession(LoggedSession):
             {
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json",
-                "talend-version": TALEND_API_VERSION
+                "talend-version": TALEND_API_VERSION,
             }
         )
