@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 TALEND_API_VERSION = "2021-03"
+DEFAULT_POLL_INTERVAL = 5
 HTTP_TIMEOUT = 30
 
 
@@ -96,7 +97,9 @@ class TalendClient:
             for item in items
         ]
         executions = sorted(
-            executions, key=lambda x: x.get("start_timestamp") or "", reverse=True
+            executions,
+            key=lambda x: x.get("start_timestamp") or "",
+            reverse=True,
         )[:limit]
         return executions
 
@@ -111,7 +114,9 @@ class TalendClient:
         return execution_id
 
     def run(self, job_id, wait=False, timeout=None, poll_interval=None):
-        poll_interval = poll_interval if poll_interval is not None else 5
+        poll_interval = (
+            poll_interval if poll_interval is not None else DEFAULT_POLL_INTERVAL
+        )
         status = "unknown"
         exec_id = self.run_job(job_id)
         if not wait:

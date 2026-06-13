@@ -15,7 +15,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from .talend_client import TalendClient
+from .talend_client import DEFAULT_POLL_INTERVAL, TalendClient
 
 logger = logging.getLogger(__name__)
 console = Console()
@@ -246,7 +246,7 @@ def create_parser():
         type=int,
         default=None,
         metavar="SECS",
-        help="polling interval (requires --wait, default: 5)",
+        help=f"polling interval (requires --wait, default: {DEFAULT_POLL_INTERVAL})",
     )
     return parser
 
