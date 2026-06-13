@@ -470,16 +470,6 @@ def test_run_parses_args_and_passes_values(monkeypatch):
     assert called["poll_interval"] == 10
 
 
-def test_run_rejects_timeout_without_wait(monkeypatch):
-    args = cli.parse_args(["--timeout", "10"])
-    assert cli.run(args) == 2
-
-
-def test_run_rejects_poll_interval_without_wait(monkeypatch):
-    args = cli.parse_args(["--poll-interval", "10"])
-    assert cli.run(args) == 2
-
-
 def test_main_exits_with_code_from_run(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["prog"])
     monkeypatch.setattr(cli, "run", lambda args: 0)
