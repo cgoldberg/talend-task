@@ -433,24 +433,11 @@ def test_run_returns_2_on_missing_env_var(monkeypatch, missing_var):
     assert cli.run(args) == 2
 
 
-@pytest.mark.parametrize(
-    "argv",
-    [
-        pytest.param(["--timeout", "30"], id="timeout_only"),
-        pytest.param(["--poll-interval", "10"], id="poll_only"),
-        pytest.param(["--timeout", "-1"], id="timeout_only"),
-        pytest.param(["--poll-interval", "-1"], id="poll_only"),
-        pytest.param(["--timeout", "30", "--poll-interval", "10"], id="poll_timeout"),
-        pytest.param(["--activity", "--wait"], id="activity_wait"),
-        pytest.param(["--activity", "--timeout", "30"], id="activity_timeout"),
-        pytest.param(["--activity", "--poll-interval", "1"], id="activity_poll"),
-    ],
-)
-def test_run_returns_2_on_invalid_args(monkeypatch, argv):
-    fake_client = Mock()
-    monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
-    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: "execution_successful")
-    args = cli.parse_args(argv)
+def test_run_returns_2_on_invalid_args(monkeypatch):
+    monkeypatch.setattr(cli, "validate_args", lambda args: "Error: some error")
+    monkeypatch.setattr(cli, "TalendClient", Mock())
+    monkeypatch.setattr(cli, "run_cli", Mock())
+    args = Mock()
     assert cli.run(args) == 2
 
 

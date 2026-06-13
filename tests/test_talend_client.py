@@ -238,6 +238,6 @@ def test_logged_session_request_exception(monkeypatch, caplog):
     monkeypatch.setattr(requests.Session, "send", fake_send)
     with caplog.at_level(logging.DEBUG):
         with pytest.raises(requests.RequestException):
-            session.request("GET", "http://test.com")
+            session.request("GET", "https://api.example.com")
     assert "HTTP FAIL GET" in caplog.text
     assert "boom" in caplog.text
