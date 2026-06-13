@@ -137,7 +137,7 @@ def test_format_iso_timestamp(timestamp, expected):
                 poll_interval=10,
                 job="job1",
             ),
-            id="timeout_poll_with_wait",
+            id="timeout_poll_wait",
         ),
     ],
 )
@@ -210,15 +210,15 @@ def test_validate_args_valid(overrides):
         ),
         pytest.param(
             {"activity": True, "wait": True},
-            id="activity_with_wait",
+            id="activity_wait",
         ),
         pytest.param(
             {"activity": True, "timeout": 10},
-            id="activity_with_timeout",
+            id="activity_timeout",
         ),
         pytest.param(
             {"activity": True, "poll_interval": 5},
-            id="activity_with_poll",
+            id="activity_poll",
         ),
         pytest.param(
             {"timeout": 10, "wait": False},
@@ -436,17 +436,14 @@ def test_run_returns_2_on_missing_env_var(monkeypatch, missing_var):
 @pytest.mark.parametrize(
     "argv",
     [
-        ["--timeout", "30"],
-        ["--poll-interval", "10"],
-        ["--timeout", "-1"],
-        ["--poll-interval", "-1"],
-        ["--timeout", "30", "--poll-interval", "10"],
-        [
-            "--activity",
-            "--wait",
-        ],
-        ["--activity", "--timeout", "30"],
-        ["--activity", "--poll-interval", "1"],
+        pytest.param(["--timeout", "30"], id="timeout_only"),
+        pytest.param(["--poll-interval", "10"], id="poll_only"),
+        pytest.param(["--timeout", "-1"], id="timeout_only"),
+        pytest.param(["--poll-interval", "-1"], id="poll_only"),
+        pytest.param(["--timeout", "30", "--poll-interval", "10"], id="poll_timeout"),
+        pytest.param(["--activity", "--wait"], id="activity_wait"),
+        pytest.param(["--activity", "--timeout", "30"], id="activity_timeout"),
+        pytest.param(["--activity", "--poll-interval", "1"], id="activity_poll"),
     ],
 )
 def test_run_returns_2_on_invalid_args(monkeypatch, argv):
