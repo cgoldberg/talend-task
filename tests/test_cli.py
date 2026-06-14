@@ -59,19 +59,19 @@ def test_convert_time(seconds, expected_time):
             "2026-06-12T12:00:00.000Z",
             "2026-06-12T12:00:30.000Z",
             "00:00:30",
-            id="30secs",
+            id="30_secs",
         ),
         pytest.param(
             "2026-06-12T12:00:00.000Z",
             "2026-06-12T12:05:00.000Z",
             "00:05:00",
-            id="5mins",
+            id="5_mins",
         ),
         pytest.param(
             "2026-06-12T12:00:00.000Z",
             "2026-06-12T13:00:00.000Z",
             "01:00:00",
-            id="1hr",
+            id="1_hr",
         ),
     ],
 )
@@ -85,17 +85,17 @@ def test_compute_duration(start_timestamp, end_timestamp, expected):
         pytest.param(
             "2026-06-12T12:45:15.538Z",
             "06/12/2026 12:45 PM",
-            id="timestamp1",
+            id="timestamp_1",
         ),
         pytest.param(
             "2026-01-01T00:00:00.000Z",
             "01/01/2026 12:00 AM",
-            id="timestamp2",
+            id="timestamp_2",
         ),
         pytest.param(
             "2026-12-31T23:59:59.999Z",
             "12/31/2026 11:59 PM",
-            id="timestamp3",
+            id="timestamp_3",
         ),
     ],
 )
