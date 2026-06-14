@@ -1,6 +1,36 @@
+"""
+Talend Cloud CLI for executing and monitoring jobs via Talend Cloud Processing
+API.
+
+This module provides a command-line interface for discovering, running, and
+monitoring Talend Cloud jobs using the TalendClient API wrapper. It supports
+interactive job selection, direct execution by name, and optional synchronous
+waiting with status polling.
+
+Features:
+
+- Run jobs interactively or via --job argument
+- Optional blocking mode with polling and timeout support
+- View recent execution history without triggering runs (--activity)
+- Rich terminal output using tables and panels
+- Environment-based configuration via .env (API_URL, ACCESS_TOKEN)
+- Structured logging with optional debug mode
+
+Configuration:
+
+- API_URL: Talend Cloud Processing API base URL
+- ACCESS_TOKEN: bearer token for authentication
+
+Exit codes:
+
+- 0 success
+- 1 execution or runtime failure
+- 2 configuration or validation error
+- 130 user interrupt (Ctrl+C)
+"""
+
 # Copyright (c) 2026 Corey Goldberg
 # SPDX-License-Identifier: MIT
-
 
 import argparse
 import logging

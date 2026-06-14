@@ -1,6 +1,55 @@
+"""
+Talend Cloud Processing API client for job execution and monitoring.
+
+This module provides a Python client for interacting with the Talend Cloud
+Processing API, including job discovery, execution triggering, and execution
+status polling.
+
+Capabilities:
+
+- Authenticated HTTP session handling with bearer token
+- Retrieval of available executable jobs and metadata
+- Execution of tasks via Talend Processing API
+- Polling-based monitoring of execution lifecycle states
+- Optional synchronous execution with timeout support
+- Retrieval and normalization of execution history
+- Structured logging of HTTP requests, responses, and job lifecycle events
+
+Classes:
+
+- TalendClient: High-level API wrapper for job and execution operations
+- AuthSession: Requests session configured with authentication headers
+- LoggedSession: Extended requests.Session providing detailed HTTP logging
+
+Execution lifecycle model:
+
+A job execution transitions through a state machine that begins at request
+submission and ends in a terminal state:
+
+    REQUEST
+       ↓
+    dispatching
+       ├── deploy_failed
+       ├── execution_rejected
+       └── executing
+               ├── execution_successful
+               ├── execution_failed
+               ├── terminated
+               ├── terminated_timeout
+               └── terminated_shutdown
+
+Design notes:
+
+- HTTP requests are executed with a shared session for connection reuse
+- Responses are validated via raise_for_status() before processing
+- Job metadata is cached in-memory for the lifetime of the client instance
+- Polling behavior is configurable via timeout and interval parameters
+- Logging is included at DEBUG/INFO/ERROR levels
+"""
+
+
 # Copyright (c) 2026 Corey Goldberg
 # SPDX-License-Identifier: MIT
-
 
 import logging
 import time
@@ -58,26 +107,6 @@ class TalendClient:
         return job_id
 
     def get_execution_status(self, execution_id):
-        """Get current execution status.
-
-        Jobs are dispatched and validated, then executed if accepted, and
-        finally transition to a terminal state indicating success, failure,
-        rejection, or termination reason.
-
-        Execution lifecycle of a task from request to completion:
-
-        REQUEST
-           ↓
-        dispatching
-           ├── deploy_failed
-           ├── execution_rejected
-           └── executing
-                   ├── execution_successful
-                   ├── execution_failed
-                   ├── terminated
-                   ├── terminated_timeout
-                   └── terminated_shutdown
-        """
         result = self._get(f"/executions/{execution_id}")
         status = result["status"]
         return status
