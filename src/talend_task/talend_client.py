@@ -1,5 +1,4 @@
-"""
-Talend Cloud Processing API client for job execution and monitoring.
+"""Talend Cloud Processing API client for job execution and monitoring.
 
 This module provides a Python client for interacting with the Talend Cloud
 Processing API, including job discovery, execution triggering, and execution

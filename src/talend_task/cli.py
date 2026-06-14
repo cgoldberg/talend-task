@@ -1,6 +1,4 @@
-"""
-Talend Cloud CLI for executing and monitoring jobs via Talend Cloud Processing
-API.
+"""CLI for executing and monitoring jobs via Talend Cloud Processing API.
 
 This module provides a command-line interface for discovering, running, and
 monitoring Talend Cloud jobs using the TalendClient API wrapper. It supports
