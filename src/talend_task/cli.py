@@ -167,7 +167,6 @@ def run_cli(
 ):
     if run_job_fn is None:
         run_job_fn = run_job
-
     if job_name:
         job_id = client.get_job_id(job_name)
         if activity:

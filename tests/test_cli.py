@@ -59,19 +59,19 @@ def test_convert_time(seconds, expected_time):
             "2026-06-12T12:00:00.000Z",
             "2026-06-12T12:00:30.000Z",
             "00:00:30",
-            id="30_secs",
+            id="30secs",
         ),
         pytest.param(
             "2026-06-12T12:00:00.000Z",
             "2026-06-12T12:05:00.000Z",
             "00:05:00",
-            id="5_mins",
+            id="5mins",
         ),
         pytest.param(
             "2026-06-12T12:00:00.000Z",
             "2026-06-12T13:00:00.000Z",
             "01:00:00",
-            id="1_hr",
+            id="1hr",
         ),
     ],
 )
@@ -269,42 +269,29 @@ def test_run_job_wait(monkeypatch):
         client,
         "job123",
         wait=True,
-        timeout=None,
+        timeout=10,
         poll_interval=5,
     )
     assert status == "execution_successful"
     assert elapsed_time == "00:01:05"
-
-
-def test_run_cli_named_job_success():
-    client = Mock()
-    client.get_job_id.return_value = "id2"
-    run_job_mock = Mock(return_value=("execution_successful", None))
-    status = cli.run_cli(
-        job_name="job2",
-        wait=False,
-        timeout=None,
-        poll_interval=None,
-        activity=False,
-        client=client,
-        jobs=None,
-        run_job_fn=run_job_mock,
-    )
-    assert status == "execution_successful"
-    client.get_job_id.assert_called_once_with("job2")
-    run_job_mock.assert_called_once_with(
-        client,
-        "id2",
-        wait=False,
-        timeout=None,
-        poll_interval=None,
+    client.run.assert_called_once_with(
+        "job123",
+        wait=True,
+        timeout=10,
+        poll_interval=5,
     )
 
 
-def test_run_cli_named_job_fail():
+@pytest.mark.parametrize(
+    "expected_status",
+    ["execution_successful", "execution_failed"],
+)
+def test_run_cli_named_job(expected_status):
     client = Mock()
     client.get_job_id.return_value = "id1"
-    run_job_mock = Mock(return_value=("execution_failed", None))
+
+    run_job_mock = Mock(return_value=(expected_status, None))
+
     status = cli.run_cli(
         job_name="job1",
         wait=False,
@@ -315,7 +302,7 @@ def test_run_cli_named_job_fail():
         jobs=None,
         run_job_fn=run_job_mock,
     )
-    assert status == "execution_failed"
+    assert status == expected_status
     client.get_job_id.assert_called_once_with("job1")
     run_job_mock.assert_called_once_with(
         client,
