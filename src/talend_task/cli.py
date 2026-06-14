@@ -117,7 +117,7 @@ def show_activity(job_name, executions):
     console.print(table)
 
 
-def select_job(jobs, input_fn=input):
+def select_job(jobs):
     console.print()
     table = Table(title="[bold]Talend Cloud Jobs[/bold]")
     table.add_column("#", style="cyan", justify="right")
@@ -125,7 +125,7 @@ def select_job(jobs, input_fn=input):
     for num, job in enumerate(jobs, 1):
         table.add_row(str(num), job[0])
     console.print(table)
-    job_number = input_fn("\nSelect a job number: ")
+    job_number = input("\nSelect a job number: ")
     try:
         job_number = int(job_number)
         if job_number < 1 or job_number > len(jobs):
@@ -160,7 +160,6 @@ def run_cli(
     activity,
     client,
     jobs,
-    input_fn=input,
     run_job_fn=None,
 ):
     if run_job_fn is None:
@@ -184,7 +183,7 @@ def run_cli(
             logger.info("Duration: %s", elapsed_time)
             logger.info("Execution finished")
         return status
-    job_name, job_id = select_job(jobs, input_fn=input_fn)
+    job_name, job_id = select_job(jobs)
     if activity:
         job_id = client.get_job_id(job_name)
         executions = client.get_executions(job_id)

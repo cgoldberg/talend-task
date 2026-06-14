@@ -330,10 +330,8 @@ def test_run_cli_invalid_job():
     client.get_job_id.assert_called_once_with(unknown_job)
 
 
-def test_run_cli_interactive_selection():
-    def fake_input(prompt):
-        return "2"
-
+def test_run_cli_interactive_selection(monkeypatch):
+    monkeypatch.setattr("builtins.input", lambda _: "2")
     client = Mock()
     jobs = [("job1", "id1"), ("job2", "id2")]
     run_job_mock = Mock(return_value=("execution_successful", None))
@@ -345,7 +343,6 @@ def test_run_cli_interactive_selection():
         activity=False,
         client=client,
         jobs=jobs,
-        input_fn=fake_input,
         run_job_fn=run_job_mock,
     )
     assert status == "execution_successful"
@@ -358,10 +355,8 @@ def test_run_cli_interactive_selection():
     )
 
 
-def test_run_cli_invalid_selection():
-    def fake_input(prompt):
-        return "99"
-
+def test_run_cli_invalid_selection(monkeypatch):
+    monkeypatch.setattr("builtins.input", lambda _: "99")
     client = Mock()
     jobs = [("job1", "id1")]
     with pytest.raises(ValueError, match="Invalid job number"):
@@ -373,7 +368,6 @@ def test_run_cli_invalid_selection():
             activity=False,
             client=client,
             jobs=jobs,
-            input_fn=fake_input,
         )
 
 
