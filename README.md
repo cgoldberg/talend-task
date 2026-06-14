@@ -47,6 +47,9 @@ jobs, including ETL pipelines, workflows, and tasks. It uses the Talend
 [Processing API](https://talend.qlik.dev/apis/processing/2021-03) to trigger
 job runs and monitor status.
 
+In the CLI, a "job" refers to a runnable Talend Task. Running a job creates
+a Talend Execution.
+
 Select a job interactively, or specify one directly with `--job`.
 
 ----
