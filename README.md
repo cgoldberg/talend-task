@@ -86,11 +86,11 @@ options:
 
 ## Configuration
 
-The CLI requires an Access Token and an API URL for your Talend region.
+The CLI requires an Access Token and an API URL for your Talend Cloud region.
 
-- **Access Token**: Generate it in the
+- **API URL**: Talend Cloud regional API endpoint.
+- **Access Token**: Generate in
   [Talend Management Console](https://help.qlik.com/talend/management-console-user-guide).
-- **API URL**: Base endpoint URL for the API you will connect to.
 
 Configuration is provided via environment variables:
 
@@ -113,10 +113,10 @@ ACCESS_TOKEN=<access-token>
 
 #### Direct mode
 
-Run a job immediately by providing `--job <name>`:
+Run a job by providing `--job <name>`:
 
 ```bash
-talend_task --job Job1
+talend_task --wait --job Job1
 ```
 
 #### Interactive mode
@@ -124,7 +124,15 @@ talend_task --job Job1
 Run the CLI without specifying a job to select and execute one from a menu:
 
 ```bash
-talend_task
+talend_task --wait
+```
+
+#### Activity mode
+
+Show recent runs for a job without executing it:
+
+```bash
+talend_task --activity --job Job1
 ```
 
 ----
