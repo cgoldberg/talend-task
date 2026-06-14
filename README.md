@@ -98,15 +98,16 @@ The CLI requires an Access Token and an API URL for your Talend Cloud region.
 Configuration is provided via environment variables:
 
 ```bash
-export API_URL=https://api.<region>.talend.com
+export API_URL=https://api.<region>.cloud.talend.com
 export ACCESS_TOKEN=<access-token>
 ```
 
-Alternatively, you can define these variables in a `.env` file in the current
-directory:
+(`region` = `us`, `eu`, `us-west`, etc)
+
+Alternatively, define them in a `.env` file in the current directory:
 
 ```
-API_URL=https://api.<region>.talend.com
+API_URL=https://api.<region>.cloud.talend.com
 ACCESS_TOKEN=<access-token>
 ```
 
