@@ -1,3 +1,7 @@
+# Copyright (c) 2026 Corey Goldberg
+# SPDX-License-Identifier: MIT
+
+
 """Talend Cloud Processing API client for job execution and monitoring.
 
 This module provides a Python client for interacting with the Talend Cloud
@@ -45,10 +49,6 @@ Design notes:
 - Polling behavior is configurable via timeout and interval parameters
 - Logging is included at DEBUG/INFO/ERROR levels
 """
-
-
-# Copyright (c) 2026 Corey Goldberg
-# SPDX-License-Identifier: MIT
 
 import logging
 import time

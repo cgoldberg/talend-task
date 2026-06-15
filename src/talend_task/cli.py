@@ -1,3 +1,7 @@
+# Copyright (c) 2026 Corey Goldberg
+# SPDX-License-Identifier: MIT
+
+
 """CLI for executing and monitoring jobs via Talend Cloud Processing API.
 
 This module provides a command-line interface for discovering, running, and
@@ -26,9 +30,6 @@ Exit codes:
 - 2 configuration or validation error
 - 130 user interrupt (Ctrl+C)
 """
-
-# Copyright (c) 2026 Corey Goldberg
-# SPDX-License-Identifier: MIT
 
 import argparse
 import logging
