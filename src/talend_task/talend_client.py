@@ -94,9 +94,11 @@ class TalendClient:
         return self._jobs_cache
 
     def get_jobs(self):
+        """List available jobs and their IDs."""
         return [(item["name"], item["executable"]) for item in self._jobs()]
 
     def get_job_id(self, job_name):
+        """Look up a job ID by name."""
         job_id = next(
             (item["executable"] for item in self._jobs() if item["name"] == job_name),
             None,
@@ -105,43 +107,8 @@ class TalendClient:
             raise ValueError(f"Unknown job: {job_name}")
         return job_id
 
-    def get_execution_status(self, execution_id):
-        result = self._get(f"/executions/{execution_id}")
-        status = result["status"]
-        return status
-
-    def get_executions(self, job_id, limit=20):
-        result = self._get(f"/executables/tasks/{job_id}/executions")
-        items = result.get("items", [])
-        executions = [
-            {
-                "execution_status": item.get("executionStatus"),
-                "start_timestamp": item.get("startTimestamp"),
-                "finish_timestamp": item.get("finishTimestamp"),
-                "task_version": item.get("taskVersion"),
-                "runtime_type": item.get("runtime", {}).get("type"),
-                "user_id": item.get("userId"),
-            }
-            for item in items
-        ]
-        executions = sorted(
-            executions,
-            key=lambda x: x.get("start_timestamp") or "",
-            reverse=True,
-        )[:limit]
-        return executions
-
-    def run_job(self, job_id):
-        result = self._post("/executions", {"executable": job_id})
-        execution_id = result["executionId"]
-        logger.info(
-            "Job submitted\n    jobId       : %s\n    executionId : %s",
-            job_id,
-            execution_id,
-        )
-        return execution_id
-
     def run(self, job_id, wait=False, timeout=None, poll_interval=None):
+        """Submit a job and optionally poll until it finishes."""
         poll_interval = (
             poll_interval if poll_interval is not None else DEFAULT_POLL_INTERVAL
         )
@@ -166,6 +133,45 @@ class TalendClient:
                         f"Job {job_id} did not complete within {timeout} seconds"
                     )
             time.sleep(poll_interval)
+
+    def run_job(self, job_id):
+        """Submit a job asynchronously."""
+        result = self._post("/executions", {"executable": job_id})
+        execution_id = result["executionId"]
+        logger.info(
+            "Job submitted\n    jobId       : %s\n    executionId : %s",
+            job_id,
+            execution_id,
+        )
+        return execution_id
+
+    def get_execution_status(self, execution_id):
+        """Retrieve current status of a job execution."""
+        result = self._get(f"/executions/{execution_id}")
+        status = result["status"]
+        return status
+
+    def get_executions(self, job_id, limit=20):
+        """Retrieve recent executions for a job."""
+        result = self._get(f"/executables/tasks/{job_id}/executions")
+        items = result.get("items", [])
+        executions = [
+            {
+                "execution_status": item.get("executionStatus"),
+                "start_timestamp": item.get("startTimestamp"),
+                "finish_timestamp": item.get("finishTimestamp"),
+                "task_version": item.get("taskVersion"),
+                "runtime_type": item.get("runtime", {}).get("type"),
+                "user_id": item.get("userId"),
+            }
+            for item in items
+        ]
+        executions = sorted(
+            executions,
+            key=lambda x: x.get("start_timestamp") or "",
+            reverse=True,
+        )[:limit]
+        return executions
 
 
 class LoggedSession(requests.Session):
