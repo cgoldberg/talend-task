@@ -80,9 +80,7 @@ class TalendClient:
 
     def _post(self, path, payload):
         resp = self.session.post(
-            f"{self.base_url}{path}",
-            json=payload,
-            timeout=HTTP_TIMEOUT,
+            f"{self.base_url}{path}", json=payload, timeout=HTTP_TIMEOUT
         )
         resp.raise_for_status()
         return resp.json()
@@ -122,10 +120,7 @@ class TalendClient:
             start = time.monotonic()
         while True:
             status = self.get_execution_status(exec_id)
-            logger.info(
-                "Status: %s",
-                status,
-            )
+            logger.info("Status: %s", status)
             if status not in pending_statuses:
                 return status
             if timeout:
@@ -176,6 +171,8 @@ class TalendClient:
 
 
 class LoggedSession(requests.Session):
+    MAX_BODY_SIZE = 2000
+
     def request(self, method, url, **kwargs):
         start = time.monotonic()
         resp = None
@@ -190,7 +187,7 @@ class LoggedSession(requests.Session):
                 elapsed_ms,
             )
             logger.debug("Headers: %s", dict(resp.headers))
-            logger.debug("Body: %s", resp.text[:2000])
+            logger.debug("Body: %s", resp.text[: self.MAX_BODY_SIZE])
             return resp
         except requests.RequestException as e:
             elapsed_ms = (time.monotonic() - start) * 1000
@@ -204,7 +201,7 @@ class LoggedSession(requests.Session):
                 status,
                 elapsed_ms,
                 repr(e),
-                (response_text[:2000] if response_text else None),
+                (response_text[: self.MAX_BODY_SIZE] if response_text else None),
             )
             raise
 

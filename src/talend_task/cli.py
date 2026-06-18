@@ -332,7 +332,7 @@ def run(args):
         logger.error("Config error: %s", e)
         return 2
     except KeyboardInterrupt:
-        logger.info("Exiting")
+        logger.info("\nExiting")
         return 130
     except Exception:
         if args.debug:
