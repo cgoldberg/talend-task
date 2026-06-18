@@ -88,6 +88,7 @@ class TalendClient:
         return resp.json()
 
     def _jobs(self):
+        """Retrieve and cache jobs for the lifetime of this instance."""
         if self._jobs_cache is None:
             result = self._get("/executables/tasks")
             self._jobs_cache = result.get("items", [])
