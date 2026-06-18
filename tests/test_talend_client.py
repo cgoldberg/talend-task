@@ -10,6 +10,7 @@ import pytest
 import requests
 
 from talend_task.talend_client import (
+    DEFAULT_POLL_INTERVAL,
     HTTP_TIMEOUT,
     TALEND_API_VERSION,
     LoggedSession,
@@ -169,6 +170,18 @@ def test_run_polls_until_completion_when_waiting(monkeypatch, client):
     assert sleep.call_args_list == [call(1), call(1)]
 
 
+def test_run_uses_default_poll_interval(monkeypatch, client):
+    client.run_job = Mock(return_value="exec-123")
+    statuses = ("dispatching", "executing", "execution_successful")
+    client.get_execution_status = Mock(side_effect=statuses)
+    sleep = Mock()
+    monkeypatch.setattr("talend_task.talend_client.time.sleep", sleep)
+    status = client.run("job-456", wait=True)
+    assert status == "execution_successful"
+    default = DEFAULT_POLL_INTERVAL
+    assert sleep.call_args_list == [call(default), call(default)]
+
+
 def test_run_does_not_poll_and_returns_unknown(client):
     client.run_job = Mock(return_value="exec-123")
     client.get_execution_status = Mock()
@@ -178,17 +191,6 @@ def test_run_does_not_poll_and_returns_unknown(client):
     assert status1 == expected_status
     assert status2 == expected_status
     client.get_execution_status.assert_not_called()
-
-
-def test_run_uses_default_polling_interval(monkeypatch, client):
-    client.run_job = Mock(return_value="exec-123")
-    statuses = ("dispatching", "executing", "execution_successful")
-    client.get_execution_status = Mock(side_effect=statuses)
-    sleep = Mock()
-    monkeypatch.setattr("talend_task.talend_client.time.sleep", sleep)
-    status = client.run("job-456", wait=True, timeout=None, poll_interval=None)
-    assert status == "execution_successful"
-    assert sleep.call_args_list == [call(5), call(5)]
 
 
 def test_run_times_out(monkeypatch, client):
