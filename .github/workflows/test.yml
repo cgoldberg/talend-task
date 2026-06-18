@@ -33,7 +33,7 @@ jobs:
         env:
           TOXENV: validate
 
-      - name: Run linter and formatter
+      - name: Run linting and formatting
         run: tox
         env:
           TOXENV: lint
