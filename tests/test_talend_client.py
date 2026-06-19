@@ -89,6 +89,7 @@ def test_jobs_are_cached(monkeypatch, client):
     result2 = client._jobs()
     assert result2 == jobs
     assert client._jobs_cache == jobs
+    assert len(calls) == 1
     assert calls == ["/executables/tasks"]
 
 
