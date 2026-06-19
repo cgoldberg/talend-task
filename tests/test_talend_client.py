@@ -70,37 +70,53 @@ def test_post_calls_session_post(client):
     )
 
 
+def test_jobs_are_cached(monkeypatch, client):
+    jobs = [
+        {"name": "job1", "executable": "abc"},
+        {"name": "job2", "executable": "xyz"},
+    ]
+    calls = []
+
+    def fake_get(path):
+        calls.append(path)
+        return {"items": jobs}
+
+    monkeypatch.setattr(client, "_get", fake_get)
+    assert client._jobs_cache is None
+    result1 = client._jobs()
+    assert result1 == jobs
+    assert client._jobs_cache == jobs
+    result2 = client._jobs()
+    assert result2 == jobs
+    assert client._jobs_cache == jobs
+    assert calls == ["/executables/tasks"]
+
+
 def test_get_jobs_returns_name_and_executable_pairs(client):
-    response_payload = {
-        "items": [
-            {"name": "job1", "executable": "abc"},
-            {"name": "job2", "executable": "xyz"},
-        ]
-    }
+    jobs = [
+        {"name": "job1", "executable": "abc"},
+        {"name": "job2", "executable": "xyz"},
+    ]
     expected = [("job1", "abc"), ("job2", "xyz")]
-    client._get = Mock(return_value=response_payload)
+    client._jobs = Mock(return_value=jobs)
     assert client.get_jobs() == expected
 
 
 def test_get_job_id(client):
-    response_payload = {
-        "items": [
-            {"name": "job1", "executable": "abc"},
-            {"name": "job2", "executable": "xyz"},
-        ]
-    }
-    client._get = Mock(return_value=response_payload)
+    jobs = [
+        {"name": "job1", "executable": "abc"},
+        {"name": "job2", "executable": "xyz"},
+    ]
+    client._jobs = Mock(return_value=jobs)
     assert client.get_job_id("job2") == "xyz"
 
 
 def test_get_job_id_raises_for_unknown_job(client):
-    response_payload = {
-        "items": [
-            {"name": "job1", "executable": "abc"},
-            {"name": "job2", "executable": "xyz"},
-        ]
-    }
-    client._get = Mock(return_value=response_payload)
+    jobs = [
+        {"name": "job1", "executable": "abc"},
+        {"name": "job2", "executable": "xyz"},
+    ]
+    client._jobs = Mock(return_value=jobs)
     with pytest.raises(ValueError, match="Unknown job: job3"):
         client.get_job_id("job3")
 
