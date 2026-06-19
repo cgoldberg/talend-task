@@ -21,8 +21,8 @@ Capabilities:
 Classes:
 
 - TalendClient: High-level API wrapper for job and execution operations
-- AuthSession: Requests session configured with authentication headers
-- LoggedSession: Extended requests.Session providing detailed HTTP logging
+- _AuthSession: Requests session configured with authentication headers
+- _LoggedSession: Extended requests.Session providing detailed HTTP logging
 
 Execution lifecycle model:
 
@@ -67,7 +67,7 @@ class TalendClient:
     def __init__(self, api_url, access_token):
         self.access_token = access_token
         self.base_url = api_url.rstrip("/") + "/processing"
-        self.session = AuthSession(access_token)
+        self.session = _AuthSession(access_token)
         self._jobs_cache = None
 
     def _get(self, path):
@@ -170,7 +170,7 @@ class TalendClient:
         return executions
 
 
-class LoggedSession(requests.Session):
+class _LoggedSession(requests.Session):
     MAX_BODY_SIZE = 2000
 
     def request(self, method, url, **kwargs):
@@ -206,7 +206,7 @@ class LoggedSession(requests.Session):
             raise
 
 
-class AuthSession(LoggedSession):
+class _AuthSession(_LoggedSession):
     def __init__(self, access_token):
         super().__init__()
         self.headers.update(

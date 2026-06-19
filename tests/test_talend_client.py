@@ -13,8 +13,9 @@ from talend_task.talend_client import (
     DEFAULT_POLL_INTERVAL,
     HTTP_TIMEOUT,
     TALEND_API_VERSION,
-    LoggedSession,
     TalendClient,
+    _AuthSession,
+    _LoggedSession,
 )
 
 
@@ -34,11 +35,11 @@ class FakeResponse:
 
 @pytest.fixture
 def client():
-    return TalendClient("https://api.example.com", "abc123")
+    return TalendClient("https://api.example.com", "token123")
 
 
 def test_client_sets_headers(client):
-    assert client.session.headers["Authorization"] == "Bearer abc123"
+    assert client.session.headers["Authorization"] == "Bearer token123"
     assert client.session.headers["Content-Type"] == "application/json"
     assert client.session.headers["talend-version"] == TALEND_API_VERSION
 
@@ -170,10 +171,11 @@ def test_get_executions_sorts_and_limits(client):
 
 
 def test_run_job_returns_execution_id(client):
+    job_id = "abc123"
     client._post = Mock(return_value={"executionId": "exec-123"})
-    execution_id = client.run_job("job-456")
+    execution_id = client.run_job(job_id)
     assert execution_id == "exec-123"
-    client._post.assert_called_once_with("/executions", {"executable": "job-456"})
+    client._post.assert_called_once_with("/executions", {"executable": job_id})
 
 
 def test_run_polls_until_completion_when_waiting(monkeypatch, client):
@@ -182,7 +184,7 @@ def test_run_polls_until_completion_when_waiting(monkeypatch, client):
     client.get_execution_status = Mock(side_effect=statuses)
     sleep = Mock()
     monkeypatch.setattr("talend_task.talend_client.time.sleep", sleep)
-    status = client.run("job-456", wait=True, poll_interval=1)
+    status = client.run("job1", wait=True, poll_interval=1)
     assert status == "execution_successful"
     assert sleep.call_args_list == [call(1), call(1)]
 
@@ -193,7 +195,7 @@ def test_run_uses_default_poll_interval(monkeypatch, client):
     client.get_execution_status = Mock(side_effect=statuses)
     sleep = Mock()
     monkeypatch.setattr("talend_task.talend_client.time.sleep", sleep)
-    status = client.run("job-456", wait=True)
+    status = client.run("job1", wait=True)
     assert status == "execution_successful"
     default = DEFAULT_POLL_INTERVAL
     assert sleep.call_args_list == [call(default), call(default)]
@@ -202,8 +204,8 @@ def test_run_uses_default_poll_interval(monkeypatch, client):
 def test_run_does_not_poll_and_returns_unknown(client):
     client.run_job = Mock(return_value="exec-123")
     client.get_execution_status = Mock()
-    status1 = client.run("job-123")
-    status2 = client.run("job-456", wait=False)
+    status1 = client.run("job1")
+    status2 = client.run("job2", wait=False)
     expected_status = "unknown"
     assert status1 == expected_status
     assert status2 == expected_status
@@ -211,7 +213,7 @@ def test_run_does_not_poll_and_returns_unknown(client):
 
 
 def test_run_times_out(monkeypatch, client):
-    job_name = "job-456"
+    job_name = "job1"
     timeout = 5
     client.run_job = Mock(return_value="exec-123")
     client.get_execution_status = Mock(return_value="executing")
@@ -228,18 +230,16 @@ def test_run_times_out(monkeypatch, client):
 
 
 def test_logged_session_success(monkeypatch, caplog):
-    fake_resp = FakeResponse()
-    session = LoggedSession()
+    def fake_send(*args, **kwargs):
+        return FakeResponse()
+
+    session = _LoggedSession()
     times = iter([100.0, 100.123])
     monkeypatch.setattr(time, "monotonic", lambda: next(times))
-
-    def fake_send(self, request, **kwargs):
-        return fake_resp
-
     monkeypatch.setattr(requests.Session, "send", fake_send)
     with caplog.at_level(logging.DEBUG):
         resp = session.request("GET", "https://api.example.com")
-    assert resp is fake_resp
+    assert isinstance(resp, FakeResponse)
     assert "HTTP GET" in caplog.text
     assert "200" in caplog.text
     assert "Headers:" in caplog.text
@@ -247,16 +247,25 @@ def test_logged_session_success(monkeypatch, caplog):
 
 
 def test_logged_session_request_exception(monkeypatch, caplog):
-    session = LoggedSession()
-    times = iter([100.0, 100.045])
-    monkeypatch.setattr(time, "monotonic", lambda: next(times))
-
-    def fake_send(self, request, **kwargs):
+    def fake_send(*args, **kwargs):
         raise requests.RequestException("boom")
 
+    session = _LoggedSession()
+    times = iter([100.0, 100.045])
+    monkeypatch.setattr(time, "monotonic", lambda: next(times))
     monkeypatch.setattr(requests.Session, "send", fake_send)
     with caplog.at_level(logging.DEBUG):
         with pytest.raises(requests.RequestException):
             session.request("GET", "https://api.example.com")
     assert "HTTP FAIL GET" in caplog.text
     assert "boom" in caplog.text
+
+
+def test_auth_session():
+    access_token = "token123"
+    session = _AuthSession(access_token)
+    assert isinstance(session, requests.Session)
+    assert isinstance(session, _LoggedSession)
+    assert session.headers["Authorization"] == f"Bearer {access_token}"
+    assert session.headers["Content-Type"] == "application/json"
+    assert session.headers["talend-version"] == TALEND_API_VERSION
