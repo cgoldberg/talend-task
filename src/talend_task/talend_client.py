@@ -20,9 +20,9 @@ Capabilities:
 
 Classes:
 
-- TalendClient: High-level API wrapper for job and execution operations
-- _AuthSession: Requests session configured with authentication headers
-- _LoggedSession: Extended requests.Session providing detailed HTTP logging
+- `TalendClient`: High-level API wrapper for job and execution operations
+- `_AuthSession`: Requests session configured with authentication headers
+- `_LoggedSession`: Extended requests.Session providing detailed HTTP logging
 
 Execution lifecycle model:
 
