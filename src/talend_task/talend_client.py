@@ -104,7 +104,7 @@ class TalendClient:
         return resp.json()
 
     def _jobs(self):
-        """Retrieve and cache jobs for the lifetime of this instance."""
+        """Retrieve and cache job names and executables (IDs)."""
         if self._jobs_cache is None:
             result = self._get("/executables/tasks")
             self._jobs_cache = result.get("items", [])
@@ -134,7 +134,7 @@ class TalendClient:
         return job_id
 
     def run(self, job_id, wait=False, timeout=None, poll_interval=None):
-        """Submit a job and optionally poll until it finishes."""
+        """Submit a job for execution and optionally poll until it finishes."""
         poll_interval = poll_interval if poll_interval is not None else POLL_INTERVAL
         exec_id = self.run_job(job_id)
         if not wait:
@@ -155,7 +155,7 @@ class TalendClient:
             time.sleep(poll_interval)
 
     def run_job(self, job_id):
-        """Submit a job asynchronously."""
+        """Submit a job for execution asynchronously."""
         result = self._post("/executions", {"executable": job_id})
         execution_id = result["executionId"]
         logger.info(
