@@ -35,7 +35,7 @@ jobs:
             -o site \
             --no-search \
             --docformat markdown \
-            --footer-text "Talend Task · ${REPO_URL} · ${GITHUB_SHA:0:7}"
+            --footer-text "${REPO_URL} (${GITHUB_SHA:0:7})"
           echo "Docs successfully built"
 
       - name: Publish API docs to GitHub Pages
@@ -46,6 +46,5 @@ jobs:
 
       - name: Show published URL
         run: |
-          BASE_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
-          echo "Published API docs URL: ${BASE_URL}"
+          echo "Published API docs URL: https://coreygoldberg.com/talend-task"
           echo "GitHub commit: https://github.com/${{ github.repository }}/commit/${GITHUB_SHA}"
