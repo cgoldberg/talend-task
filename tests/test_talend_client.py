@@ -76,12 +76,25 @@ def test_post_calls_session_post(client):
     )
 
 
+def test_get_raises_closed_client_error(client):
+    client.close()
+    with pytest.raises(RuntimeError, match="TalendClient has been closed"):
+        client._get("/test")
+
+
+def test_post_raises_closed_client_error(client):
+    client.close()
+    with pytest.raises(RuntimeError, match="TalendClient has been closed"):
+        client._post("/test", {"foo": "bar"})
+
+
 def test_close_closes_session_and_clears_cache(client):
     fake_session = MagicMock()
     client._session = fake_session
     client._jobs_cache = [{"name": "job1", "executable": "abc"}]
     client.close()
     fake_session.close.assert_called_once()
+    assert client._session is None
     assert client._jobs_cache is None
 
 
@@ -90,7 +103,8 @@ def test_close_is_idempotent(client):
     client._session = fake_session
     client.close()
     client.close()
-    assert fake_session.close.call_count == 2
+    fake_session.close.assert_called_once()
+    assert client._session is None
     assert client._jobs_cache is None
 
 

@@ -81,8 +81,14 @@ class TalendClient:
     def __exit__(self, exc_type, exc, tb):
         self.close()
 
+    def _require_open(self):
+        if self._session is None:
+            raise RuntimeError("TalendClient has been closed")
+        return self._session
+
     def _get(self, path):
-        resp = self._session.get(
+        session = self._require_open()
+        resp = session.get(
             f"{self.base_url}{path}",
             timeout=HTTP_TIMEOUT,
         )
@@ -90,7 +96,8 @@ class TalendClient:
         return resp.json()
 
     def _post(self, path, payload):
-        resp = self._session.post(
+        session = self._require_open()
+        resp = session.post(
             f"{self.base_url}{path}", json=payload, timeout=HTTP_TIMEOUT
         )
         resp.raise_for_status()
@@ -106,8 +113,10 @@ class TalendClient:
     def close(self):
         """Close the session and clear jobs cache."""
         try:
-            self._session.close()
+            if self._session is not None:
+                self._session.close()
         finally:
+            self._session = None
             self._jobs_cache = None
 
     def get_jobs(self):
