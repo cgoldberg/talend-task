@@ -77,7 +77,7 @@ After installation, the `talend_task` command is available in your shell.
 
 Select a job interactively or pass `--job` directly.
 
-##### CLI Options:
+#### CLI Options:
 
 ```
 $ talend_task --help
@@ -124,7 +124,7 @@ ACCESS_TOKEN=<access-token>
 
 ----
 
-## CLI Usage Examples
+## CLI Example Usage
 
 #### Direct mode
 
@@ -152,25 +152,29 @@ talend_task --activity --job Job1
 
 ----
 
-### CLI Screenshots
+## CLI Screenshots
 
-##### Interactive mode
+#### Interactive mode
 
 ![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/main/screenshots/screenshot-terminal-interactive-mode.png)
 
-##### Direct mode
+#### Direct mode
 
 ![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/main/screenshots/screenshot-terminal-direct-mode.png)
 
+#### Activity mode
+
+![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/main/screenshots/screenshot-terminal-activity-mode.png)
+
 ----
 
-### API Usage
+## Python API Client
 
 Use the `TalendClient` class to interact with Talend Cloud from Python.
 
 See the [API documentation][api-docs] for details.
 
-##### Example
+#### Client Example Usage
 
 ```python
 from talend_task import TalendClient
@@ -185,7 +189,7 @@ with TalendClient(api_url, access_token) as client:
 
 ----
 
-### Development
+## Development
 
 - Install as editable package with required development/testing
   dependencies:
@@ -213,7 +217,7 @@ with TalendClient(api_url, access_token) as client:
     tox
     ```
 
-### Project Structure
+## Project Structure
 
 ```
 ./
