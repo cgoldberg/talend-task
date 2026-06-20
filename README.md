@@ -21,10 +21,11 @@
     </td>
   </tr>
   <tr>
-    <td>Build/Tests (CI)</td>
+    <td>Build (CI)</td>
     <td>
       <a href="https://github.com/cgoldberg/talend-task/actions/workflows/test.yml">
         <img src="https://github.com/cgoldberg/talend-task/actions/workflows/test.yml/badge.svg">
+        <img src="https://github.com/cgoldberg/talend-task/actions/workflows/docs.yml/badge.svg">
       </a>
     </td>
   </tr>
@@ -187,6 +188,7 @@ talend_task --activity --job Job1
 ./
 ├── .github/
 │   └── workflows/
+│       └── docs.yml
 │       └── test.yml
 ├── src/
 │   └── talend_task/
