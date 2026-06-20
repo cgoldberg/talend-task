@@ -43,15 +43,20 @@
 
 ## About
 
-`talend_task` is a Python CLI for running [Talend Cloud](https://talend.com)
-jobs, including ETL pipelines, workflows, and tasks. It uses the Talend Cloud
-[Processing API](https://talend.qlik.dev/apis/processing/2021-03) to trigger
-job runs and monitor status.
+The `talend-task` package provides a command-line interface and Python API
+client for executing and monitoring jobs in [Talend Cloud][talend-cloud],
+including ETL pipelines and other data workflows. It uses the
+[Processing API][talend-processing-api] to trigger executions and monitor
+their status.
 
-In the CLI, a "job" refers to a runnable Talend Task. Running a job creates
-a Talend Execution.
+The package consists of:
 
-Select a job interactively, or specify one directly with `--job`.
+- command-line interface (`talend_task`)
+- Python API client module (`talend_task.talend_client`) providing the
+  `TalendClient` class
+
+In this package, a “job” refers to a runnable Talend Task. Running a job creates
+a corresponding Talend Execution.
 
 ----
 
@@ -65,7 +70,11 @@ pip install talend-task
 
 ## CLI
 
+`talend_task` is a CLI for running and monitoring jobs in [Talend Cloud][talend-cloud].
+
 After installation, the `talend_task` command is available in your shell.
+
+Select a job interactively or pass `--job` directly.
 
 ##### CLI Options:
 
@@ -88,13 +97,13 @@ options:
 
 ----
 
-## Configuration
+## CLI Configuration
 
 The CLI requires an Access Token and an API URL for your Talend Cloud region.
 
 - **API URL**: Talend Cloud regional API endpoint.
 - **Access Token**: Generate in
-  [Talend Management Console](https://help.qlik.com/talend/management-console-user-guide).
+  [Talend Management Console][talend-management-console].
 
 Configuration is provided via environment variables:
 
@@ -114,7 +123,7 @@ ACCESS_TOKEN=<access-token>
 
 ----
 
-## Usage Examples
+## CLI Usage Examples
 
 #### Direct mode
 
@@ -142,7 +151,7 @@ talend_task --activity --job Job1
 
 ----
 
-### Screenshots
+### CLI Screenshots
 
 ##### Interactive mode
 
@@ -151,6 +160,27 @@ talend_task --activity --job Job1
 ##### Direct mode
 
 ![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/main/screenshots/screenshot-terminal-direct-mode.png)
+
+----
+
+### API Usage
+
+Use the `TalendClient` class to interact with Talend Cloud from Python.
+
+See the [API documentation][api-docs] for details.
+
+##### Example
+
+```python
+from talend_task import TalendClient
+
+api_url = "https://api.us.cloud.talend.com"
+access_token = "SECRET"
+
+with TalendClient(api_url, access_token) as client:
+    job_id = client.get_job_id("Job_123")
+    status = client.run(job_id, wait=True)
+```
 
 ----
 
@@ -202,8 +232,11 @@ talend_task --activity --job Job1
 └── tox.ini
 ```
 
-
 [github-profile]: https://github.com/cgoldberg
 [github-repo]: https://github.com/cgoldberg/talend-task
 [pypi-home]: https://pypi.org/project/talend-task
 [mit-license]: https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/main/LICENSE
+[api-docs]: https://coreygoldberg.com/talend-task
+[talend-cloud]: https://talend.com
+[talend-management-console]: https://help.qlik.com/talend/management-console-user-guide
+[talend-processing-api]: https://talend.qlik.dev/apis/processing/2021-03
