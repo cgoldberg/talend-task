@@ -64,7 +64,7 @@ class TalendClient:
     Cloud jobs through the Processing API. It handles authentication, session
     management, and base URL configuration.
 
-    ## Args
+    Args:
     - api_url (str): Base Talend Cloud API URL
     - access_token (str): OAuth or personal access token for authentication
     """
