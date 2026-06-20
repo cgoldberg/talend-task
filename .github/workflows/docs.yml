@@ -26,10 +26,9 @@ jobs:
       - name: Install package
         run: pip install -e .
 
-
       - name: Build API docs
         run: |
-          REPO_URL="github.com/${{ github.repository }}"
+          REPO_URL="https://github.com/${{ github.repository }}"
           echo "Building docs..."
           pdoc talend_task \
             -o site \
