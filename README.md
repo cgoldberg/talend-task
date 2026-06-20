@@ -1,6 +1,6 @@
 # talend-task
 
-## CLI for running Talend Cloud jobs
+## CLI and Python API for running Talend Cloud jobs
 
 - Copyright (c) 2026 [Corey Goldberg][github-profile]
 - Development: [GitHub][github-repo]
