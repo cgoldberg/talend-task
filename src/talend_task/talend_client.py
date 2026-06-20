@@ -66,7 +66,7 @@ class TalendClient:
 
     Args:
     - api_url (str): Base Talend Cloud API URL
-    - access_token (str): OAuth or personal access token for authentication
+    - access_token (str): OAuth or Personal Access Token for authentication
     """
 
     def __init__(self, api_url, access_token):
