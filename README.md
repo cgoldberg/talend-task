@@ -53,7 +53,8 @@ The package consists of:
 
 - command-line interface (`talend_task`)
 - Python API client module (`talend_task.talend_client`) providing the
-  `TalendClient` class ([API documentation][api-docs])
+  `TalendClient` class
+ - [API documentation][api-docs]
 
 In this package, a “job” refers to a runnable Talend Task. Running a job creates
 a corresponding Talend Execution.
