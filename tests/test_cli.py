@@ -8,7 +8,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from talend_task import cli
+import talend_task.cli as cli
 
 
 def _make_args(**kwargs):

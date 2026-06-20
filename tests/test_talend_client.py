@@ -9,11 +9,11 @@ from unittest.mock import Mock, call
 import pytest
 import requests
 
+from talend_task import TalendClient
 from talend_task.talend_client import (
-    DEFAULT_POLL_INTERVAL,
     HTTP_TIMEOUT,
+    POLL_INTERVAL,
     TALEND_API_VERSION,
-    TalendClient,
     _AuthSession,
     _LoggedSession,
 )
@@ -45,27 +45,29 @@ def test_client_sets_headers(client):
 
 
 def test_get_calls_session_get(client):
+    response_payload = {"foo": "bar"}
     response = Mock()
-    response.json.return_value = {"hello": "world"}
+    response.json.return_value = response_payload
     client.session.get = Mock(return_value=response)
-    result = client._get("/foo")
-    assert result == {"hello": "world"}
+    result = client._get("/test")
+    assert result == response_payload
     client.session.get.assert_called_once_with(
-        "https://api.example.com/processing/foo",
+        "https://api.example.com/processing/test",
         timeout=HTTP_TIMEOUT,
     )
     response.raise_for_status.assert_called_once()
 
 
 def test_post_calls_session_post(client):
+    response_payload = {"foo": "bar"}
     response = Mock()
-    response.json.return_value = {"id": 123}
+    response.json.return_value = response_payload
     client.session.post = Mock(return_value=response)
-    payload = {"a": 1}
-    result = client._post("/foo", payload)
-    assert result == {"id": 123}
+    payload = {"hello": "world"}
+    result = client._post("/test", payload)
+    assert result == response_payload
     client.session.post.assert_called_once_with(
-        "https://api.example.com/processing/foo",
+        "https://api.example.com/processing/test",
         json=payload,
         timeout=HTTP_TIMEOUT,
     )
@@ -197,8 +199,7 @@ def test_run_uses_default_poll_interval(monkeypatch, client):
     monkeypatch.setattr("talend_task.talend_client.time.sleep", sleep)
     status = client.run("job1", wait=True)
     assert status == "execution_successful"
-    default = DEFAULT_POLL_INTERVAL
-    assert sleep.call_args_list == [call(default), call(default)]
+    assert sleep.call_args_list == [call(POLL_INTERVAL), call(POLL_INTERVAL)]
 
 
 def test_run_does_not_poll_and_returns_unknown(client):
