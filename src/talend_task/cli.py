@@ -168,7 +168,6 @@ def run_cli(
     if job_name:
         job_id = client.get_job_id(job_name)
         if activity:
-            job_id = client.get_job_id(job_name)
             executions = client.get_executions(job_id)
             show_activity(job_name, executions)
             return "unknown"
@@ -186,7 +185,6 @@ def run_cli(
         return status
     job_name, job_id = select_job(jobs)
     if activity:
-        job_id = client.get_job_id(job_name)
         executions = client.get_executions(job_id)
         show_activity(job_name, executions)
         return "unknown"
@@ -324,7 +322,7 @@ def run(args):
                 jobs=jobs,
             )
             if status not in ("execution_successful", "unknown"):
-                logger.exception("Execution not succesful: %s", status)
+                logger.error("Execution not succesful: %s", status)
                 return 1
     except ConfigError as e:
         if args.debug:

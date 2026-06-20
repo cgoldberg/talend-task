@@ -368,6 +368,28 @@ def test_run_cli_invalid_selection(monkeypatch):
         )
 
 
+def test_run_cli_activity(monkeypatch):
+    def fake_show_activity(job_name, executions):
+        fake_show_activity.called = True
+
+    client = Mock()
+    client.get_job_id = Mock(return_value="id1")
+    client.get_executions = Mock(return_value=["exec-123"])
+    fake_show_activity.called = False
+    monkeypatch.setattr(cli, "show_activity", fake_show_activity)
+    result = cli.run_cli(
+        job_name="job1",
+        wait=False,
+        timeout=None,
+        poll_interval=None,
+        activity=True,
+        client=client,
+        jobs=None,
+    )
+    assert result == "unknown"
+    assert fake_show_activity.called
+
+
 def test_run_returns_0_on_success(monkeypatch):
     fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]

@@ -208,7 +208,7 @@ def test_get_executions_sorts_and_limits(client):
 
 
 def test_run_job_returns_execution_id(client):
-    job_id = "abc123"
+    job_id = "abc"
     client._post = Mock(return_value={"executionId": "exec-123"})
     execution_id = client.run_job(job_id)
     assert execution_id == "exec-123"
