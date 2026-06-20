@@ -252,7 +252,7 @@ def create_parser():
     parser.add_argument(
         "--activity",
         action="store_true",
-        help="show recent runs without executing job (cannot be used with --wait)",
+        help="show recent runs without executing job (cannot use --wait)",
     )
     parser.add_argument(
         "--job",
