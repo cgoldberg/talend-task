@@ -64,6 +64,17 @@ HTTP_TIMEOUT = 30
 
 
 class TalendClient:
+    """Client for the Talend Cloud Processing API.
+
+    This high-level client provides methods for managing and executing Talend
+    Cloud jobs through the Processing API. It handles authentication, session
+    management, and base URL configuration.
+
+    ## Args
+    - api_url (str): Base Talend Cloud API URL
+    - access_token (str): OAuth or personal access token for authentication
+    """
+
     def __init__(self, api_url, access_token):
         self.access_token = access_token
         self.base_url = api_url.rstrip("/") + "/processing"
