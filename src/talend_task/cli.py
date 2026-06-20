@@ -171,7 +171,7 @@ def run_cli(
             job_id = client.get_job_id(job_name)
             executions = client.get_executions(job_id)
             show_activity(job_name, executions)
-            return
+            return "unknown"
         logger.info("Executing job: %s", job_name)
         status, elapsed_time = run_job_fn(
             client,
@@ -189,7 +189,7 @@ def run_cli(
         job_id = client.get_job_id(job_name)
         executions = client.get_executions(job_id)
         show_activity(job_name, executions)
-        return
+        return "unknown"
     console.print(
         Panel.fit(
             f"[bold green]{job_name}[/bold green]",
@@ -323,9 +323,9 @@ def run(args):
                 client=client,
                 jobs=jobs,
             )
-        if status not in ("execution_successful", "unknown"):
-            logger.exception("Execution not succesful")
-            return 1
+            if status not in ("execution_successful", "unknown"):
+                logger.exception("Execution not succesful: %s", status)
+                return 1
     except ConfigError as e:
         if args.debug:
             raise
@@ -334,10 +334,10 @@ def run(args):
     except KeyboardInterrupt:
         logger.info("\nExiting")
         return 130
-    except Exception:
+    except Exception as e:
         if args.debug:
             raise
-        logger.exception("Unexpected error")
+        logger.exception("Unexpected error: %s", e)
         return 1
     return 0
 
