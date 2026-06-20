@@ -18,12 +18,6 @@ Capabilities:
 - Retrieval and normalization of execution history
 - Structured logging of HTTP requests, responses, and job lifecycle events
 
-Classes:
-
-- `TalendClient`: High-level API wrapper for job and execution operations
-- `_AuthSession`: Requests session configured with authentication headers
-- `_LoggedSession`: Extended requests.Session providing detailed HTTP logging
-
 Execution lifecycle model:
 
 A job execution transitions through a state machine that begins at request
@@ -180,6 +174,8 @@ class TalendClient:
 
 
 class _LoggedSession(requests.Session):
+    """Extended requests.Session providing detailed HTTP logging"""
+
     MAX_BODY_SIZE = 2000
 
     def request(self, method, url, **kwargs):
@@ -216,6 +212,8 @@ class _LoggedSession(requests.Session):
 
 
 class _AuthSession(_LoggedSession):
+    """Extended session configured with authentication headers."""
+
     def __init__(self, access_token):
         super().__init__()
         self.headers.update(
