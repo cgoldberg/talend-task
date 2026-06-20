@@ -29,6 +29,7 @@ jobs:
       - name: Build API docs
         run: |
           echo "Building docs..."
+          rm -rf site
           pdoc talend_task.talend_client \
             -o site \
             --no-search \
