@@ -158,11 +158,9 @@ class TalendClient:
         """Submit a job for execution asynchronously."""
         result = self._post("/executions", {"executable": job_id})
         execution_id = result["executionId"]
-        logger.info(
-            "Job submitted\n    jobId       : %s\n    executionId : %s",
-            job_id,
-            execution_id,
-        )
+        logger.info("Job submitted")
+        logger.info("   jobId       : %s", job_id)
+        logger.info("   executionId : %s", execution_id)
         return execution_id
 
     def get_execution_status(self, execution_id):
