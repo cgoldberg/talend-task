@@ -28,13 +28,14 @@ jobs:
 
       - name: Build API docs
         run: |
-          REPO_URL="https://github.com/${{ github.repository }}"
+          REPO="github.com/cgoldberg/talend-task"
+          COMMIT_URL="https://${REPO}/commit/${GITHUB_SHA}"
           echo "Building docs..."
           pdoc talend_task \
             -o site \
             --no-search \
             --docformat markdown \
-            --footer-text "${REPO_URL} (${GITHUB_SHA:0:7})"
+            --footer-text "<a href='https://${REPO}'>${REPO}</a> (<a href='${COMMIT_URL}'>${GITHUB_SHA:0:7}</a>)"
           echo "Docs successfully built"
 
       - name: Publish API docs to GitHub Pages
