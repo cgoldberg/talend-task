@@ -105,8 +105,10 @@ class TalendClient:
 
     def close(self):
         """Close the session and clear jobs cache."""
-        self._session.close()
-        self._jobs_cache = None
+        try:
+            self._session.close()
+        finally:
+            self._jobs_cache = None
 
     def get_jobs(self):
         """List available jobs and their IDs."""
