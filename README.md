@@ -124,9 +124,9 @@ ACCESS_TOKEN=<access-token>
 
 ----
 
-## CLI Example Usage
+## Example CLI Usage
 
-#### Direct mode
+#### Direct Mode
 
 Run a job by providing `--job <name>`:
 
@@ -134,7 +134,7 @@ Run a job by providing `--job <name>`:
 talend_task --wait --job Job1
 ```
 
-#### Interactive mode
+#### Interactive Mode
 
 Run the CLI without specifying a job to select and execute one from a menu:
 
@@ -142,7 +142,7 @@ Run the CLI without specifying a job to select and execute one from a menu:
 talend_task --wait
 ```
 
-#### Activity mode
+#### Activity Mode
 
 Show recent runs for a job without executing it:
 
@@ -154,15 +154,15 @@ talend_task --activity --job Job1
 
 ## CLI Screenshots
 
-#### Interactive mode
+#### Interactive Mode
 
 ![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/main/screenshots/screenshot-terminal-interactive-mode.png)
 
-#### Direct mode
+#### Direct Mode
 
 ![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/main/screenshots/screenshot-terminal-direct-mode.png)
 
-#### Activity mode
+#### Activity Mode
 
 ![Screenshot](https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/main/screenshots/screenshot-terminal-activity-mode.png)
 
@@ -174,7 +174,7 @@ Use the `TalendClient` class to interact with Talend Cloud from Python.
 
 See the [API documentation][api-docs] for details.
 
-#### Client Example Usage
+#### Example Client Usage
 
 ```python
 from talend_task import TalendClient
