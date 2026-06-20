@@ -399,6 +399,15 @@ def test_run_returns_0_on_success(monkeypatch):
     assert cli.run(args) == 0
 
 
+def test_run_returns_0_on_unknown(monkeypatch):
+    fake_client = MagicMock()
+    fake_client.get_jobs.return_value = [("job1", "id1")]
+    monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
+    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: "unknown")
+    args = cli.parse_args(["--job", "job1"])
+    assert cli.run(args) == 0
+
+
 @pytest.mark.parametrize(
     "status",
     [
