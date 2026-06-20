@@ -77,7 +77,7 @@ After installation, the `talend_task` command is available in your shell.
 
 Select a job interactively or pass `--job` directly.
 
-#### CLI Options:
+### CLI Options:
 
 ```
 $ talend_task --help
@@ -98,7 +98,7 @@ options:
 
 ----
 
-## CLI Configuration
+### CLI Configuration
 
 The CLI requires an Access Token and an API URL for your Talend Cloud region.
 
@@ -124,7 +124,7 @@ ACCESS_TOKEN=<access-token>
 
 ----
 
-## Example CLI Usage
+### Example CLI Usage
 
 #### Direct Mode
 
@@ -152,7 +152,7 @@ talend_task --activity --job Job1
 
 ----
 
-## CLI Screenshots
+### CLI Screenshots
 
 #### Interactive Mode
 
@@ -174,7 +174,7 @@ Use the `TalendClient` class to interact with Talend Cloud from Python.
 
 See the [API documentation][api-docs] for details.
 
-#### Example Client Usage
+### Example Client Usage
 
 ```python
 from talend_task import TalendClient
