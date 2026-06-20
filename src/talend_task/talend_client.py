@@ -72,11 +72,17 @@ class TalendClient:
     def __init__(self, api_url, access_token):
         self.access_token = access_token
         self.base_url = api_url.rstrip("/") + "/processing"
-        self.session = _AuthSession(access_token)
+        self._session = _AuthSession(access_token)
         self._jobs_cache = None
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+
     def _get(self, path):
-        resp = self.session.get(
+        resp = self._session.get(
             f"{self.base_url}{path}",
             timeout=HTTP_TIMEOUT,
         )
@@ -84,7 +90,7 @@ class TalendClient:
         return resp.json()
 
     def _post(self, path, payload):
-        resp = self.session.post(
+        resp = self._session.post(
             f"{self.base_url}{path}", json=payload, timeout=HTTP_TIMEOUT
         )
         resp.raise_for_status()
@@ -96,6 +102,11 @@ class TalendClient:
             result = self._get("/executables/tasks")
             self._jobs_cache = result.get("items", [])
         return self._jobs_cache
+
+    def close(self):
+        """Close the session and clear jobs cache."""
+        self._session.close()
+        self._jobs_cache = None
 
     def get_jobs(self):
         """List available jobs and their IDs."""

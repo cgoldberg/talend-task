@@ -312,17 +312,17 @@ def run(args):
         load_dotenv()
         access_token = require_env("ACCESS_TOKEN")
         api_url = require_env("API_URL")
-        client = TalendClient(api_url, access_token)
-        jobs = client.get_jobs()
-        status = run_cli(
-            job_name=args.job,
-            timeout=args.timeout,
-            wait=args.wait,
-            poll_interval=args.poll_interval,
-            activity=args.activity,
-            client=client,
-            jobs=jobs,
-        )
+        with TalendClient(api_url, access_token) as client:
+            jobs = client.get_jobs()
+            status = run_cli(
+                job_name=args.job,
+                timeout=args.timeout,
+                wait=args.wait,
+                poll_interval=args.poll_interval,
+                activity=args.activity,
+                client=client,
+                jobs=jobs,
+            )
         if status not in ("execution_successful", "unknown"):
             logger.exception("Execution not succesful")
             return 1

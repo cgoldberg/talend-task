@@ -4,7 +4,7 @@
 
 import logging
 import time
-from unittest.mock import Mock, call
+from unittest.mock import MagicMock, Mock, call
 
 import pytest
 import requests
@@ -39,19 +39,36 @@ def client():
 
 
 def test_client_sets_headers(client):
-    assert client.session.headers["Authorization"] == "Bearer token123"
-    assert client.session.headers["Content-Type"] == "application/json"
-    assert client.session.headers["talend-version"] == TALEND_API_VERSION
+    assert client._session.headers["Authorization"] == "Bearer token123"
+    assert client._session.headers["Content-Type"] == "application/json"
+    assert client._session.headers["talend-version"] == TALEND_API_VERSION
+
+
+def test_context_manager_closes_session(client):
+    fake_session = MagicMock()
+    client._session = fake_session
+    with client as c:
+        assert c is client
+    fake_session.close.assert_called_once()
+
+
+def test_context_manager_closes_on_exception(client):
+    fake_session = MagicMock()
+    client._session = fake_session
+    with pytest.raises(ValueError, match="boom"):
+        with client:
+            raise ValueError("boom")
+    fake_session.close.assert_called_once()
 
 
 def test_get_calls_session_get(client):
     response_payload = {"foo": "bar"}
     response = Mock()
     response.json.return_value = response_payload
-    client.session.get = Mock(return_value=response)
+    client._session.get = Mock(return_value=response)
     result = client._get("/test")
     assert result == response_payload
-    client.session.get.assert_called_once_with(
+    client._session.get.assert_called_once_with(
         "https://api.example.com/processing/test",
         timeout=HTTP_TIMEOUT,
     )
@@ -62,15 +79,33 @@ def test_post_calls_session_post(client):
     response_payload = {"foo": "bar"}
     response = Mock()
     response.json.return_value = response_payload
-    client.session.post = Mock(return_value=response)
+    client._session.post = Mock(return_value=response)
     payload = {"hello": "world"}
     result = client._post("/test", payload)
     assert result == response_payload
-    client.session.post.assert_called_once_with(
+    client._session.post.assert_called_once_with(
         "https://api.example.com/processing/test",
         json=payload,
         timeout=HTTP_TIMEOUT,
     )
+
+
+def test_close_closes_session_and_clears_cache(client):
+    fake_session = MagicMock()
+    client._session = fake_session
+    client._jobs_cache = [{"name": "job1", "executable": "abc"}]
+    client.close()
+    fake_session.close.assert_called_once()
+    assert client._jobs_cache is None
+
+
+def test_close_is_idempotent(client):
+    fake_session = MagicMock()
+    client._session = fake_session
+    client.close()
+    client.close()
+    assert fake_session.close.call_count == 2
+    assert client._jobs_cache is None
 
 
 def test_jobs_are_cached(monkeypatch, client):

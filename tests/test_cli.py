@@ -4,7 +4,7 @@
 
 import argparse
 import sys
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -283,15 +283,12 @@ def test_run_job_wait(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "expected_status",
-    ["execution_successful", "execution_failed"],
+    "expected_status", ["execution_successful", "execution_failed"]
 )
 def test_run_cli_named_job(expected_status):
     client = Mock()
     client.get_job_id.return_value = "id1"
-
     run_job_mock = Mock(return_value=(expected_status, None))
-
     status = cli.run_cli(
         job_name="job1",
         wait=False,
@@ -331,10 +328,10 @@ def test_run_cli_invalid_job():
 
 
 def test_run_cli_interactive_selection(monkeypatch):
-    monkeypatch.setattr("builtins.input", lambda _: "2")
     client = Mock()
     jobs = [("job1", "id1"), ("job2", "id2")]
     run_job_mock = Mock(return_value=("execution_successful", None))
+    monkeypatch.setattr("builtins.input", lambda _: "2")
     status = cli.run_cli(
         job_name=None,
         wait=False,
@@ -356,9 +353,9 @@ def test_run_cli_interactive_selection(monkeypatch):
 
 
 def test_run_cli_invalid_selection(monkeypatch):
-    monkeypatch.setattr("builtins.input", lambda _: "99")
     client = Mock()
     jobs = [("job1", "id1")]
+    monkeypatch.setattr("builtins.input", lambda _: "99")
     with pytest.raises(ValueError, match="Invalid job number"):
         cli.run_cli(
             job_name=None,
@@ -372,9 +369,9 @@ def test_run_cli_invalid_selection(monkeypatch):
 
 
 def test_run_returns_0_on_success(monkeypatch):
-    fake_client = Mock()
+    fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
+    monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
     monkeypatch.setattr(cli, "run_cli", lambda **kwargs: "execution_successful")
     args = cli.parse_args(["--job", "job1"])
     assert cli.run(args) == 0
@@ -392,9 +389,10 @@ def test_run_returns_0_on_success(monkeypatch):
     ],
 )
 def test_run_returns_1_on_failure(monkeypatch, status):
-    fake_client = Mock()
+    fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
+    lambda *args, **kwargs: fake_client
+    monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
     monkeypatch.setattr(cli, "run_cli", lambda **kwargs: status)
     args = cli.parse_args(["--job", "job1"])
     assert cli.run(args) == 1
@@ -423,9 +421,9 @@ def test_run_returns_2_on_invalid_args(monkeypatch):
 
 
 def test_run_returns_1_on_unhandled_exception(monkeypatch):
-    fake_client = Mock()
+    fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
+    monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
     monkeypatch.setattr(cli, "run_cli", Mock(side_effect=Exception("boom")))
     args = cli.parse_args(["--job", "job1"])
     assert cli.run(args) == 1
@@ -435,9 +433,9 @@ def test_run_returns_130_on_keyboard_interrupt(monkeypatch):
     def boom(**kwargs):
         raise KeyboardInterrupt()
 
-    fake_client = Mock()
+    fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
+    monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
     monkeypatch.setattr(cli, "run_cli", boom)
     args = cli.parse_args(["--job", "job1"])
     assert cli.run(args) == 130
@@ -449,9 +447,9 @@ def test_run_parses_args_and_passes_values(monkeypatch):
         return "execution_successful"
 
     called = {}
-    fake_client = Mock()
+    fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(cli, "TalendClient", lambda *args: fake_client)
+    monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
     monkeypatch.setattr(cli, "run_cli", fake_run_cli)
     args = cli.parse_args(["--wait", "--poll-interval", "10", "--job", "job1"])
     assert cli.run(args) == 0
