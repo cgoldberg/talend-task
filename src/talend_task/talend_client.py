@@ -127,10 +127,9 @@ class TalendClient:
     def run(self, job_id, wait=False, timeout=None, poll_interval=None):
         """Submit a job and optionally poll until it finishes."""
         poll_interval = poll_interval if poll_interval is not None else POLL_INTERVAL
-        status = "unknown"
         exec_id = self.run_job(job_id)
         if not wait:
-            return status
+            return "unknown"
         pending_statuses = {"dispatching", "executing"}
         if timeout:
             start = time.monotonic()
