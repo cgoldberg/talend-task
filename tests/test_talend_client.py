@@ -19,20 +19,6 @@ from talend_task.talend_client import (
 )
 
 
-class FakeResponse:
-    def __init__(
-        self,
-        status_code=200,
-        url="https://api.example.com",
-        text="OK",
-        headers=None,
-    ):
-        self.status_code = status_code
-        self.url = url
-        self.text = text
-        self.headers = headers or {}
-
-
 @pytest.fixture
 def client():
     return TalendClient("https://api.example.com", "token123")
@@ -266,20 +252,26 @@ def test_run_times_out(monkeypatch, client):
 
 
 def test_logged_session_success(monkeypatch, caplog):
+    url = "https://api.example.com"
+
     def fake_send(*args, **kwargs):
-        return FakeResponse()
+        return Mock(
+            status_code=200,
+            url=url,
+            text="OK",
+            headers={},
+        )
 
     session = _LoggedSession()
     times = iter([100.0, 100.123])
     monkeypatch.setattr(time, "monotonic", lambda: next(times))
     monkeypatch.setattr(requests.Session, "send", fake_send)
     with caplog.at_level(logging.DEBUG):
-        resp = session.request("GET", "https://api.example.com")
-    assert isinstance(resp, FakeResponse)
-    assert "HTTP GET" in caplog.text
-    assert "200" in caplog.text
+        resp = session.request("GET", url)
+    assert resp.status_code == 200
+    assert f"HTTP GET {url} -> 200" in caplog.text
     assert "Headers:" in caplog.text
-    assert "Body:" in caplog.text
+    assert "Body: OK" in caplog.text
 
 
 def test_logged_session_request_exception(monkeypatch, caplog):
