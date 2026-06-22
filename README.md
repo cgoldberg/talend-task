@@ -56,7 +56,7 @@ The package consists of:
   `TalendClient` class
   - [API documentation][api-docs]
 
-In this package, a “job” refers to a runnable Talend Task. Running a job creates
+In this package, a "job" refers to a runnable Talend Task. Running a job creates
 a corresponding Talend Execution.
 
 ----
