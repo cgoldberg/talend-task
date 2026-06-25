@@ -10,13 +10,14 @@ status polling.
 
 Capabilities:
 
-- Authenticated HTTP session handling with bearer token
-- Retrieval of available executable jobs and metadata
-- Execution of tasks via Talend Processing API
-- Polling-based monitoring of execution lifecycle states
-- Optional synchronous execution with timeout support
-- Retrieval and normalization of execution history
-- Structured logging of HTTP requests, responses, and job lifecycle events
+- Authentication using Personal Access Token or OAuth 2.0 Client Credentials flow
+- Automatic HTTP session and bearer token management
+- Task execution via the Talend Processing API
+- Optional synchronous execution with configurable timeouts
+- Polling-based execution monitoring
+- Retrieval of executable jobs and metadata
+- Retrieval of execution history
+- Structured logging of HTTP requests, responses, and execution lifecycle events
 
 Execution lifecycle model:
 
@@ -284,7 +285,7 @@ class StaticTokenCredential(Credential):
 
 
 class OAuthClientCredential(Credential):
-    """OAuth2 client credentials flow with automatic token retrieval and refresh."""
+    """OAuth 2.0 Client Credentials flow with automatic token retrieval and refresh."""
 
     def __init__(self, api_url, client_id, client_secret, scope=None):
         self.token_url = api_url.rstrip("/") + "/security/oauth/token"

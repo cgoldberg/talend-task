@@ -100,26 +100,68 @@ options:
 
 ### CLI Configuration
 
-The CLI requires an Access Token and an API URL for your Talend Cloud region.
+The CLI requires authentication credentials and the URL of the Talend Cloud API
+endpoint for your region. These are configured using environment variables.
 
-- **API URL**: Talend Cloud regional API endpoint.
-- **Access Token**: Generate in
-  [Talend Management Console][talend-management-console].
-
-Configuration is provided via environment variables:
+- **`TALEND_API_URL`**: Talend Cloud regional API endpoint
 
 ```bash
 export TALEND_API_URL=https://api.<region>.cloud.talend.com
+```
+
+(`region` = `us`, `eu`, `us-west`, etc.)
+
+#### Authentication
+
+Talend Cloud supports two authentication methods, depending on the account
+identity.
+
+##### User Account
+
+Regular user accounts authenticate using a **Personal Access Token (PAT)**. A
+PAT represents a specific user and inherits that user's permissions. Personal
+access tokens are generated in the
+[Talend Management Console][talend-management-console].
+
+- **`TALEND_ACCESS_TOKEN`**: Personal Access Token
+
+```bash
 export TALEND_ACCESS_TOKEN=<access-token>
 ```
 
-(`region` = `us`, `eu`, `us-west`, etc)
+##### Service Account
 
-Alternatively, define them in a `.env` file in the current directory:
+Service accounts authenticate using the **OAuth 2.0 Client Credentials** flow.
+The **Client ID** and **Client Secret** are used to obtain a short-lived access
+token from the OAuth2 token endpoint. Access tokens are automatically refreshed
+before they expire.
 
+- **`TALEND_CLIENT_ID`**: Client ID
+- **`TALEND_CLIENT_SECRET`**: Client Secret
+
+```bash
+export TALEND_CLIENT_ID=<client-id>
+export TALEND_CLIENT_SECRET=<client-secret>
 ```
+
+#### Using a `.env` File
+
+Instead of setting environment variables, you can define them in a `.env`
+file in the current directory.
+
+##### User account
+
+```text
 TALEND_API_URL=https://api.<region>.cloud.talend.com
 TALEND_ACCESS_TOKEN=<access-token>
+```
+
+##### Service account
+
+```text
+TALEND_API_URL=https://api.<region>.cloud.talend.com
+TALEND_CLIENT_ID=<client-id>
+TALEND_CLIENT_SECRET=<client-secret>
 ```
 
 ----
@@ -176,17 +218,36 @@ See the [API documentation][api-docs] for details.
 
 ### Example Client Usage
 
+Run a job using a Personal Aceess Token for authentication:
+
 ```python
-from talend_task import TalendClient
+from talend_task import StaticTokenCredential, TalendClient
 
 api_url = "https://api.us.cloud.talend.com"
-access_token = "SECRET"
+access_token = "token123"
 
-with TalendClient(api_url, access_token) as client:
+credential = StaticTokenCredential(access_token)
+
+with TalendClient(api_url, credential) as client:
     job_id = client.get_job_id("Job_123")
     status = client.run(job_id, wait=True)
 ```
 
+Run a job using OAuth 2.0 Client Credentials flow for authentication:
+
+```python
+from talend_task import OAuthClientCredential, TalendClient
+
+api_url = "https://api.us.cloud.talend.com"
+client_id = "id123"
+client_secret = "secret123"
+
+credential = OAuthClientCredential(client_id, client_secret)
+
+with TalendClient(api_url, credential) as client:
+    job_id = client.get_job_id("Job_123")
+    status = client.run(job_id, wait=True)
+```
 ----
 
 ## Development
