@@ -53,11 +53,11 @@ def test_static_token_adds_bearer_authorization_header():
         pytest.param(
             "https://api.example.com/",
             "https://api.example.com/security/oauth/token",
-            id="with_trailing_slash",
+            id="trailing_slash",
         ),
     ],
 )
-def test_oauth_client_token_url_is_normalized_correctly(api_url, expected):
+def test_oauth_client_token_url_is_normalized(api_url, expected):
     credential = OAuthClientCredential(
         api_url=api_url,
         client_id="client",
@@ -181,7 +181,7 @@ def test_oauth_client_compute_expiry(
         ),
     ],
 )
-def test_oauth_client_apply_state_machine(
+def test_oauth_client_apply(
     monkeypatch,
     oauth_credential,
     access_token,
