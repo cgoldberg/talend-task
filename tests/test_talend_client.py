@@ -273,6 +273,9 @@ def test_run_times_out(monkeypatch, client):
 
 
 def test_session_logs_success(monkeypatch, caplog):
+    status_code = 200
+    url = "https://api.example.com/foo"
+
     def fake_send(self, request, **kwargs):
         resp = requests.Response()
         resp.status_code = 200
@@ -284,18 +287,20 @@ def test_session_logs_success(monkeypatch, caplog):
     times = iter([100.0, 100.045])
     monkeypatch.setattr(time, "monotonic", lambda: next(times))
     monkeypatch.setattr(requests.Session, "send", fake_send)
-    url = "https://api.example.com"
     with caplog.at_level(logging.DEBUG):
         session.request("GET", url)
-    assert f"HTTP GET {url}/ -> 200 (45.0ms)" in caplog.text
+    assert f"HTTP GET {url} -> {status_code} (45.0ms)" in caplog.text
     assert "Headers:" in caplog.text
     assert "Body: OK" in caplog.text
 
 
 def test_session_logs_request_error(monkeypatch, caplog):
+    status_code = 404
+    url = "https://api.example.com/notfound"
+
     def fake_send(self, request, **kwargs):
         resp = requests.Response()
-        resp.status_code = 404
+        resp.status_code = status_code
         resp.url = request.url
         resp._content = b"Not Found"
         return resp
@@ -304,48 +309,47 @@ def test_session_logs_request_error(monkeypatch, caplog):
     times = iter([100.0, 100.045])
     monkeypatch.setattr(time, "monotonic", lambda: next(times))
     monkeypatch.setattr(requests.Session, "send", fake_send)
-    url = "https://api.example.com/notfound"
     with caplog.at_level(logging.DEBUG):
         resp = session.request("GET", url)
         with pytest.raises(
             requests.HTTPError,
-            match=f"404 Client Error: None for url: {url}",
+            match=f"{status_code} Client Error: None for url: {url}",
         ):
             resp.raise_for_status()
-    assert f"HTTP GET {url} -> 404 (45.0ms)" in caplog.text
+    assert f"HTTP GET {url} -> {status_code} (45.0ms)" in caplog.text
     assert "Headers:" in caplog.text
     assert "Body: Not Found" in caplog.text
 
 
 def test_session_logs_request_exception(monkeypatch, caplog):
+    error = "boom"
+
     def fake_send(self, request, **kwargs):
-        raise requests.RequestException("boom")
+        raise requests.RequestException(error)
 
     session = TalendSession(StaticTokenCredential("token123"))
     times = iter([100.0, 100.045])
     monkeypatch.setattr(time, "monotonic", lambda: next(times))
     monkeypatch.setattr(requests.Session, "send", fake_send)
-    url = "https://api.example.com"
-    with pytest.raises(requests.RequestException, match="boom"):
+    url = "https://api.example.com/foo"
+    with pytest.raises(requests.RequestException, match=error):
         session.request("GET", url)
     msg = (
         f"HTTP FAIL GET {url} -> None (45.0ms) "
-        "| error=RequestException('boom') | body=None"
+        f"| error=RequestException('{error}') | body=None"
     )
     assert msg in caplog.text
 
 
 def test_session_auth(monkeypatch):
-    url = "https://api.example.com"
+    url = "https://api.example.com/foo"
     access_token = "token123"
     captured = {}
 
     def fake_send(self, request, **kwargs):
         captured["headers"] = request.headers
         resp = requests.Response()
-        resp.status_code = 200
         resp.url = request.url
-        resp._content = b"OK"
         return resp
 
     session = TalendSession(StaticTokenCredential(access_token))
