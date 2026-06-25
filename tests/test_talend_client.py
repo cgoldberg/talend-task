@@ -28,8 +28,8 @@ def session():
 def client():
     with TalendClient(
         "https://api.example.com", StaticTokenCredential("token123")
-    ) as client:
-        yield client
+    ) as fclient:
+        yield fclient
 
 
 def test_client_sets_headers(client):
