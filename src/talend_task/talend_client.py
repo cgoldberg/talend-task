@@ -312,6 +312,7 @@ class OAuthClientCredential(Credential):
         return time.time() >= self._expires_at
 
     def _refresh(self):
+        logger.debug("Refreshing token")
         resp = requests.post(
             self.token_url,
             auth=HTTPBasicAuth(self.client_id, self.client_secret),
