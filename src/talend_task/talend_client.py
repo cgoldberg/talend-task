@@ -101,7 +101,9 @@ class TalendClient:
     def _post(self, path, payload):
         session = self._require_open()
         resp = session.post(
-            f"{self.base_url}{path}", json=payload, timeout=HTTP_TIMEOUT
+            f"{self.base_url}{path}",
+            json=payload,
+            timeout=HTTP_TIMEOUT,
         )
         resp.raise_for_status()
         return resp.json()
@@ -260,7 +262,7 @@ class Credential(ABC):
     """Base interface for applying authentication to HTTP requests."""
 
     @abstractmethod
-    def apply(self, headers: dict) -> dict:
+    def apply(self, headers):
         """Apply authentication to headers."""
         raise NotImplementedError
 
@@ -272,10 +274,10 @@ class Credential(ABC):
 class StaticTokenCredential(Credential):
     """Personal Access Token (PAT) credential."""
 
-    def __init__(self, token: str):
+    def __init__(self, token):
         self.token = token
 
-    def apply(self, headers: dict) -> dict:
+    def apply(self, headers):
         """Apply authentication to headers."""
         headers["Authorization"] = f"Bearer {self.token}"
         return headers

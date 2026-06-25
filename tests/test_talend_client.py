@@ -14,18 +14,25 @@ from talend_task.talend_client import (
     HTTP_TIMEOUT,
     POLL_INTERVAL,
     TALEND_API_VERSION,
-    _AuthSession,
-    _LoggedSession,
+    StaticTokenCredential,
+    TalendSession,
 )
 
 
 @pytest.fixture
+def session():
+    return TalendSession(StaticTokenCredential("token123"))
+
+
+@pytest.fixture
 def client():
-    return TalendClient("https://api.example.com", "token123")
+    with TalendClient(
+        "https://api.example.com", StaticTokenCredential("token123")
+    ) as client:
+        yield client
 
 
 def test_client_sets_headers(client):
-    assert client._session.headers["Authorization"] == "Bearer token123"
     assert client._session.headers["Content-Type"] == "application/json"
     assert client._session.headers["talend-version"] == TALEND_API_VERSION
 
@@ -265,49 +272,87 @@ def test_run_times_out(monkeypatch, client):
         client.run(job_name, wait=True, timeout=timeout)
 
 
-def test_logged_session_success(monkeypatch, caplog):
-    url = "https://api.example.com"
+def test_session_logs_success(monkeypatch, caplog):
+    def fake_send(self, request, **kwargs):
+        resp = requests.Response()
+        resp.status_code = 200
+        resp.url = request.url
+        resp._content = b"OK"
+        return resp
 
-    def fake_send(*args, **kwargs):
-        return Mock(
-            status_code=200,
-            url=url,
-            text="OK",
-            headers={},
-        )
-
-    session = _LoggedSession()
-    times = iter([100.0, 100.123])
+    session = TalendSession(StaticTokenCredential("token123"))
+    times = iter([100.0, 100.045])
     monkeypatch.setattr(time, "monotonic", lambda: next(times))
     monkeypatch.setattr(requests.Session, "send", fake_send)
+    url = "https://api.example.com"
     with caplog.at_level(logging.DEBUG):
-        resp = session.request("GET", url)
-    assert resp.status_code == 200
-    assert f"HTTP GET {url} -> 200" in caplog.text
+        session.request("GET", url)
+    assert f"HTTP GET {url}/ -> 200 (45.0ms)" in caplog.text
     assert "Headers:" in caplog.text
     assert "Body: OK" in caplog.text
 
 
-def test_logged_session_request_exception(monkeypatch, caplog):
-    def fake_send(*args, **kwargs):
-        raise requests.RequestException("boom")
+def test_session_logs_request_error(monkeypatch, caplog):
+    def fake_send(self, request, **kwargs):
+        resp = requests.Response()
+        resp.status_code = 404
+        resp.url = request.url
+        resp._content = b"Not Found"
+        return resp
 
-    session = _LoggedSession()
+    session = TalendSession(StaticTokenCredential("token123"))
     times = iter([100.0, 100.045])
     monkeypatch.setattr(time, "monotonic", lambda: next(times))
     monkeypatch.setattr(requests.Session, "send", fake_send)
+    url = "https://api.example.com/notfound"
     with caplog.at_level(logging.DEBUG):
-        with pytest.raises(requests.RequestException):
-            session.request("GET", "https://api.example.com")
-    assert "HTTP FAIL GET" in caplog.text
-    assert "boom" in caplog.text
+        resp = session.request("GET", url)
+        with pytest.raises(
+            requests.HTTPError,
+            match=f"404 Client Error: None for url: {url}",
+        ):
+            resp.raise_for_status()
+    assert f"HTTP GET {url} -> 404 (45.0ms)" in caplog.text
+    assert "Headers:" in caplog.text
+    assert "Body: Not Found" in caplog.text
 
 
-def test_auth_session():
+def test_session_logs_request_exception(monkeypatch, caplog):
+    def fake_send(self, request, **kwargs):
+        raise requests.RequestException("boom")
+
+    session = TalendSession(StaticTokenCredential("token123"))
+    times = iter([100.0, 100.045])
+    monkeypatch.setattr(time, "monotonic", lambda: next(times))
+    monkeypatch.setattr(requests.Session, "send", fake_send)
+    url = "https://api.example.com"
+    with pytest.raises(requests.RequestException, match="boom"):
+        session.request("GET", url)
+    msg = (
+        f"HTTP FAIL GET {url} -> None (45.0ms) "
+        "| error=RequestException('boom') | body=None"
+    )
+    assert msg in caplog.text
+
+
+def test_session_auth(monkeypatch):
+    url = "https://api.example.com"
     access_token = "token123"
-    session = _AuthSession(access_token)
-    assert isinstance(session, requests.Session)
-    assert isinstance(session, _LoggedSession)
-    assert session.headers["Authorization"] == f"Bearer {access_token}"
-    assert session.headers["Content-Type"] == "application/json"
-    assert session.headers["talend-version"] == TALEND_API_VERSION
+    captured = {}
+
+    def fake_send(self, request, **kwargs):
+        captured["headers"] = request.headers
+        resp = requests.Response()
+        resp.status_code = 200
+        resp.url = request.url
+        resp._content = b"OK"
+        return resp
+
+    session = TalendSession(StaticTokenCredential(access_token))
+    times = iter([100.0, 100.045])
+    monkeypatch.setattr(time, "monotonic", lambda: next(times))
+    monkeypatch.setattr(requests.Session, "send", fake_send)
+    session.request("GET", url)
+    assert captured["headers"]["Authorization"] == f"Bearer {access_token}"
+    assert captured["headers"]["Content-Type"] == "application/json"
+    assert captured["headers"]["talend-version"] == TALEND_API_VERSION

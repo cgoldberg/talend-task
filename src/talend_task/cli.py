@@ -351,7 +351,7 @@ def run(args):
     except ConfigError as e:
         if args.debug:
             raise
-        logger.error("Config error: %s", e)
+        logger.error("Invalid configuration: %s", e)
         return 2
     except KeyboardInterrupt:
         logger.info("\nExiting")
