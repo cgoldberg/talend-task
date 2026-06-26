@@ -14,14 +14,22 @@ Features:
 - Run jobs interactively or via --job argument
 - Optional blocking mode with polling and timeout support
 - View recent execution history without triggering runs (--activity)
-- Rich terminal output using tables and panels
-- Environment-based configuration via .env (API_URL, ACCESS_TOKEN)
+- Configuration via environment variables or .env file
 - Structured logging with optional debug mode
 
 Configuration:
 
-- API_URL: Talend Cloud Processing API base URL
-- ACCESS_TOKEN: bearer token for authentication
+The CLI requires authentication credentials and the URL of the Talend Cloud
+API endpoint for your region. These are configured using environment variables:
+
+- User Account (Personal Access Token) requires:
+  - TALEND_API_URL: Talend Cloud regional API endpoint
+  - TALEND_ACCESS_TOKEN: Personal Access Token
+
+- Service Account (OAuth2 Client Credentials) requires:
+  - TALEND_API_URL: Talend Cloud regional API endpoint
+  - TALEND_CLIENT_ID: Client ID
+  - TALEND_CLIENT_SECRET: Client Secret
 
 Exit codes:
 
