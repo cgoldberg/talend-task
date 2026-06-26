@@ -2,30 +2,27 @@
 # SPDX-License-Identifier: MIT
 
 
-import logging
-import time
 from unittest.mock import MagicMock, Mock, call
 
 import pytest
-import requests
 
-from talend_task import TalendClient
+from talend_task import StaticTokenCredential, TalendClient
 from talend_task.talend_client import (
     HTTP_TIMEOUT,
     POLL_INTERVAL,
     TALEND_API_VERSION,
-    _AuthSession,
-    _LoggedSession,
 )
 
 
 @pytest.fixture
 def client():
-    return TalendClient("https://api.example.com", "token123")
+    with TalendClient(
+        "https://api.example.com", StaticTokenCredential("token123")
+    ) as fclient:
+        yield fclient
 
 
 def test_client_sets_headers(client):
-    assert client._session.headers["Authorization"] == "Bearer token123"
     assert client._session.headers["Content-Type"] == "application/json"
     assert client._session.headers["talend-version"] == TALEND_API_VERSION
 
@@ -74,17 +71,18 @@ def test_post_calls_session_post(client):
         json=payload,
         timeout=HTTP_TIMEOUT,
     )
+    response.raise_for_status.assert_called_once()
 
 
 def test_get_raises_closed_client_error(client):
     client.close()
-    with pytest.raises(RuntimeError, match="TalendClient has been closed"):
+    with pytest.raises(RuntimeError, match="TalendClient is already closed"):
         client._get("/test")
 
 
 def test_post_raises_closed_client_error(client):
     client.close()
-    with pytest.raises(RuntimeError, match="TalendClient has been closed"):
+    with pytest.raises(RuntimeError, match="TalendClient is already closed"):
         client._post("/test", {"foo": "bar"})
 
 
@@ -257,57 +255,9 @@ def test_run_times_out(monkeypatch, client):
         "talend_task.talend_client.time.monotonic",
         Mock(side_effect=[0.0, 10.0]),
     )
-    monkeypatch.setattr("talend_task.talend_client.time.sleep", lambda _: None)
+    monkeypatch.setattr("talend_task.talend_client.time.sleep", Mock())
     with pytest.raises(
         TimeoutError,
         match=f"Job {job_name} did not complete within {timeout} seconds",
     ):
         client.run(job_name, wait=True, timeout=timeout)
-
-
-def test_logged_session_success(monkeypatch, caplog):
-    url = "https://api.example.com"
-
-    def fake_send(*args, **kwargs):
-        return Mock(
-            status_code=200,
-            url=url,
-            text="OK",
-            headers={},
-        )
-
-    session = _LoggedSession()
-    times = iter([100.0, 100.123])
-    monkeypatch.setattr(time, "monotonic", lambda: next(times))
-    monkeypatch.setattr(requests.Session, "send", fake_send)
-    with caplog.at_level(logging.DEBUG):
-        resp = session.request("GET", url)
-    assert resp.status_code == 200
-    assert f"HTTP GET {url} -> 200" in caplog.text
-    assert "Headers:" in caplog.text
-    assert "Body: OK" in caplog.text
-
-
-def test_logged_session_request_exception(monkeypatch, caplog):
-    def fake_send(*args, **kwargs):
-        raise requests.RequestException("boom")
-
-    session = _LoggedSession()
-    times = iter([100.0, 100.045])
-    monkeypatch.setattr(time, "monotonic", lambda: next(times))
-    monkeypatch.setattr(requests.Session, "send", fake_send)
-    with caplog.at_level(logging.DEBUG):
-        with pytest.raises(requests.RequestException):
-            session.request("GET", "https://api.example.com")
-    assert "HTTP FAIL GET" in caplog.text
-    assert "boom" in caplog.text
-
-
-def test_auth_session():
-    access_token = "token123"
-    session = _AuthSession(access_token)
-    assert isinstance(session, requests.Session)
-    assert isinstance(session, _LoggedSession)
-    assert session.headers["Authorization"] == f"Bearer {access_token}"
-    assert session.headers["Content-Type"] == "application/json"
-    assert session.headers["talend-version"] == TALEND_API_VERSION

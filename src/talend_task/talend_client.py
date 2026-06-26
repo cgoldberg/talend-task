@@ -10,13 +10,14 @@ status polling.
 
 Capabilities:
 
-- Authenticated HTTP session handling with bearer token
-- Retrieval of available executable jobs and metadata
-- Execution of tasks via Talend Processing API
-- Polling-based monitoring of execution lifecycle states
-- Optional synchronous execution with timeout support
-- Retrieval and normalization of execution history
-- Structured logging of HTTP requests, responses, and job lifecycle events
+- Authentication using Personal Access Token or OAuth 2.0 Client Credentials flow
+- Automatic HTTP session and bearer token management
+- Task execution via the Talend Processing API
+- Optional synchronous execution with configurable timeouts
+- Polling-based execution monitoring
+- Retrieval of executable jobs and metadata
+- Retrieval of execution history
+- Structured logging of HTTP requests, responses, and execution lifecycle events
 
 Execution lifecycle model:
 
@@ -46,8 +47,10 @@ Design notes:
 
 import logging
 import time
+from abc import ABC, abstractmethod
 
 import requests
+from requests.auth import HTTPBasicAuth
 
 logger = logging.getLogger(__name__)
 
@@ -66,13 +69,14 @@ class TalendClient:
 
     Args:
     - api_url (str): Base Talend Cloud API URL
-    - access_token (str): OAuth or Personal Access Token for authentication
+    - credential (Credential): Authentication provider used to apply
+      authorization headers
     """
 
-    def __init__(self, api_url, access_token):
-        self.access_token = access_token
+    def __init__(self, api_url, credential):
         self.base_url = api_url.rstrip("/") + "/processing"
-        self._session = _AuthSession(access_token)
+        self.credential = credential
+        self._session = _TalendSession(credential)
         self._jobs_cache = None
 
     def __enter__(self):
@@ -83,7 +87,7 @@ class TalendClient:
 
     def _require_open(self):
         if self._session is None:
-            raise RuntimeError("TalendClient has been closed")
+            raise RuntimeError("TalendClient is already closed")
         return self._session
 
     def _get(self, path):
@@ -98,7 +102,9 @@ class TalendClient:
     def _post(self, path, payload):
         session = self._require_open()
         resp = session.post(
-            f"{self.base_url}{path}", json=payload, timeout=HTTP_TIMEOUT
+            f"{self.base_url}{path}",
+            json=payload,
+            timeout=HTTP_TIMEOUT,
         )
         resp.raise_for_status()
         return resp.json()
@@ -111,10 +117,13 @@ class TalendClient:
         return self._jobs_cache
 
     def close(self):
-        """Close the session and clear jobs cache."""
+        """Close all client resources."""
         try:
-            if self._session is not None:
+            if self._session:
                 self._session.close()
+            self.credential.close()
+        except Exception:
+            logger.exception("Error closing resources")
         finally:
             self._session = None
             self._jobs_cache = None
@@ -192,53 +201,138 @@ class TalendClient:
         return executions
 
 
-class _LoggedSession(requests.Session):
-    """Extended requests.Session providing detailed HTTP logging"""
+class _TalendSession(requests.Session):
+    """Requests session with logging and authentication for Talend Cloud API."""
 
     MAX_BODY_SIZE = 2000
 
-    def request(self, method, url, **kwargs):
-        start = time.monotonic()
-        resp = None
-        try:
-            resp = super().request(method, url, **kwargs)
-            elapsed_ms = (time.monotonic() - start) * 1000
-            logger.debug(
-                "HTTP %s %s -> %s (%.1fms)",
-                method,
-                resp.url,
-                resp.status_code,
-                elapsed_ms,
-            )
-            logger.debug("Headers: %s", dict(resp.headers))
-            logger.debug("Body: %s", resp.text[: self.MAX_BODY_SIZE])
-            return resp
-        except requests.RequestException as e:
-            elapsed_ms = (time.monotonic() - start) * 1000
-            status = getattr(resp, "status_code", None)
-            response_text = getattr(resp, "text", None)
-            response_url = getattr(resp, "url", url)
-            logger.error(
-                "HTTP FAIL %s %s -> %s (%.1fms) | error=%s | body=%s",
-                method,
-                response_url,
-                status,
-                elapsed_ms,
-                repr(e),
-                (response_text[: self.MAX_BODY_SIZE] if response_text else None),
-            )
-            raise
-
-
-class _AuthSession(_LoggedSession):
-    """Extended session configured with authentication headers."""
-
-    def __init__(self, access_token):
+    def __init__(self, credential):
         super().__init__()
+        self.credential = credential
         self.headers.update(
             {
-                "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json",
                 "talend-version": TALEND_API_VERSION,
             }
         )
+
+    def request(self, method, url, **kwargs):
+        headers = kwargs.setdefault("headers", {})
+        self.credential.apply(headers)
+        start = time.monotonic()
+        try:
+            response = super().request(method, url, **kwargs)
+            elapsed_ms = (time.monotonic() - start) * 1000
+            self._log_response(method, response, elapsed_ms)
+            return response
+        except requests.RequestException as e:
+            elapsed_ms = (time.monotonic() - start) * 1000
+            self._log_error(method, url, e, elapsed_ms)
+            raise
+
+    def _log_response(self, method, response, elapsed_ms):
+        logger.debug(
+            "HTTP %s %s -> %s (%.1fms)",
+            method,
+            response.url,
+            response.status_code,
+            elapsed_ms,
+        )
+        logger.debug("Headers: %s", dict(response.headers))
+        if response.text:
+            logger.debug("Body: %s", response.text[: self.MAX_BODY_SIZE])
+
+    def _log_error(self, method, url, exc, elapsed_ms):
+        response = getattr(exc, "response", None)
+        logger.error(
+            "HTTP FAIL %s %s -> %s (%.1fms) | error=%s | body=%s",
+            method,
+            getattr(response, "url", url),
+            getattr(response, "status_code", None),
+            elapsed_ms,
+            repr(exc),
+            (
+                response.text[: self.MAX_BODY_SIZE]
+                if response is not None and response.text
+                else None
+            ),
+        )
+
+
+class Credential(ABC):
+    """Base interface for applying authentication to HTTP requests."""
+
+    @abstractmethod
+    def apply(self, headers):
+        """Apply authentication to headers."""
+        raise NotImplementedError
+
+    def close(self):
+        """Close resources."""
+        pass
+
+
+class StaticTokenCredential(Credential):
+    """Personal Access Token (PAT) credential."""
+
+    def __init__(self, token):
+        self.token = token
+
+    def apply(self, headers):
+        """Apply authentication to headers."""
+        headers["Authorization"] = f"Bearer {self.token}"
+        return headers
+
+
+class OAuthClientCredential(Credential):
+    """OAuth 2.0 Client Credentials flow with automatic token retrieval and refresh."""
+
+    def __init__(self, api_url, client_id, client_secret, scope=None):
+        self.token_url = api_url.rstrip("/") + "/security/oauth/token"
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.scope = scope
+        self._access_token = None
+        self._expires_at = 0
+        self._buffer_seconds = 30  # refresh slightly early
+        self._session = requests.Session()
+
+    def apply(self, headers):
+        """Apply authentication to headers, fetching or refreshing token if needed."""
+        if self._needs_refresh():
+            self._refresh()
+        headers["Authorization"] = f"Bearer {self._access_token}"
+        return headers
+
+    def close(self):
+        """Close resources."""
+        self._session.close()
+
+    def _needs_refresh(self):
+        return self._access_token is None or self._is_expired()
+
+    def _is_expired(self):
+        return time.time() >= self._expires_at
+
+    def _refresh(self):
+        logger.debug("Refreshing token")
+        resp = requests.post(
+            self.token_url,
+            auth=HTTPBasicAuth(self.client_id, self.client_secret),
+            data=self._build_payload(),
+            timeout=HTTP_TIMEOUT,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        self._access_token = data["access_token"]
+        self._expires_at = self._compute_expiry(data)
+
+    def _build_payload(self) -> dict:
+        payload = {"grant_type": "client_credentials"}
+        if self.scope:
+            payload["scope"] = self.scope
+        return payload
+
+    def _compute_expiry(self, token_response):
+        expires_in = token_response.get("expires_in", 3600)
+        return time.time() + expires_in - self._buffer_seconds

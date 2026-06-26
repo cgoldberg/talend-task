@@ -2,6 +2,10 @@
 # SPDX-License-Identifier: MIT
 
 
-from .talend_client import TalendClient
+from .talend_client import OAuthClientCredential, StaticTokenCredential, TalendClient
 
-__all__ = ["TalendClient"]
+__all__ = [
+    "OAuthClientCredential",
+    "StaticTokenCredential",
+    "TalendClient",
+]

@@ -25,18 +25,72 @@ def _make_args(**kwargs):
 
 @pytest.fixture(autouse=True)
 def default_env(monkeypatch):
-    monkeypatch.setenv("ACCESS_TOKEN", "token")
-    monkeypatch.setenv("API_URL", "https://api.example.com")
+    monkeypatch.setenv("TALEND_ACCESS_TOKEN", "token")
+    monkeypatch.setenv("TALEND_API_URL", "https://api.example.com")
 
 
 def test_require_env_returns_value(monkeypatch):
-    monkeypatch.setenv("ACCESS_TOKEN", "abc123")
-    assert cli.require_env("ACCESS_TOKEN") == "abc123"
+    monkeypatch.setenv("FOO", "bar")
+    assert cli.require_env("FOO") == "bar"
 
 
 def test_require_env_missing():
     with pytest.raises(cli.ConfigError, match="Missing required environment variable"):
         cli.require_env("DOES_NOT_EXIST")
+
+
+def test_load_credential_pat(monkeypatch):
+    for v in [
+        "TALEND_API_URL",
+        "TALEND_ACCESS_TOKEN",
+        "TALEND_CLIENT_ID",
+        "TALEND_CLIENT_SECRET",
+    ]:
+        monkeypatch.delenv(v, raising=False)
+    monkeypatch.setenv("TALEND_API_URL", "https://api.example.com")
+    monkeypatch.setenv("TALEND_ACCESS_TOKEN", "token")
+    cred = cli.load_credential()
+    assert isinstance(cred, cli.StaticTokenCredential)
+
+
+def test_load_credential_oauth(monkeypatch):
+    for v in [
+        "TALEND_API_URL",
+        "TALEND_ACCESS_TOKEN",
+        "TALEND_CLIENT_ID",
+        "TALEND_CLIENT_SECRET",
+    ]:
+        monkeypatch.delenv(v, raising=False)
+    monkeypatch.setenv("TALEND_API_URL", "https://api.example.com")
+    monkeypatch.setenv("TALEND_CLIENT_ID", "id")
+    monkeypatch.setenv("TALEND_CLIENT_SECRET", "secret")
+    cred = cli.load_credential()
+    assert isinstance(cred, cli.OAuthClientCredential)
+
+
+def test_load_credential_invalid(monkeypatch):
+    monkeypatch.setenv("TALEND_API_URL", "https://api.example.com")
+    monkeypatch.delenv("TALEND_ACCESS_TOKEN", raising=False)
+    monkeypatch.delenv("TALEND_CLIENT_ID", raising=False)
+    monkeypatch.delenv("TALEND_CLIENT_SECRET", raising=False)
+    with pytest.raises(cli.ConfigError):
+        cli.load_credential()
+
+
+def test_load_credential_prefers_pat(monkeypatch):
+    monkeypatch.setenv("TALEND_API_URL", "https://api.example.com")
+    monkeypatch.setenv("TALEND_ACCESS_TOKEN", "token")
+    monkeypatch.setenv("TALEND_CLIENT_ID", "id")
+    monkeypatch.setenv("TALEND_CLIENT_SECRET", "secret")
+    cred = cli.load_credential()
+    assert isinstance(cred, cli.StaticTokenCredential)
+
+
+def test_load_credential_requires_api_url(monkeypatch):
+    monkeypatch.delenv("TALEND_API_URL", raising=False)
+    monkeypatch.setenv("TALEND_ACCESS_TOKEN", "token")
+    with pytest.raises(cli.ConfigError):
+        cli.load_credential()
 
 
 @pytest.mark.parametrize(
@@ -390,20 +444,51 @@ def test_run_cli_activity(monkeypatch):
     assert fake_show_activity.called
 
 
-def test_run_returns_0_on_success(monkeypatch):
-    fake_client = MagicMock()
-    fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
-    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: "execution_successful")
+def test_run_returns_2_for_invalid_args(monkeypatch):
+    monkeypatch.setattr(cli, "TalendClient", MagicMock())
+    monkeypatch.setattr(cli, "validate_args", lambda args: "error")
+    monkeypatch.setattr(cli, "load_credential", Mock())
+    monkeypatch.setattr(cli, "run_cli", Mock())
+    assert cli.run(Mock()) == 2
+
+
+def test_run_returns_2_for_credential_error(monkeypatch):
+    def raise_config_error(*args, **kwargs):
+        raise cli.ConfigError("bad config")
+
+    monkeypatch.setattr(cli, "TalendClient", MagicMock())
+    monkeypatch.setattr(cli, "validate_args", lambda args: None)
+    monkeypatch.setattr(cli, "run_cli", Mock())
+    monkeypatch.setattr(cli, "load_credential", raise_config_error)
     args = cli.parse_args(["--job", "job1"])
-    assert cli.run(args) == 0
+    assert cli.run(args) == 2
 
 
-def test_run_returns_0_on_unknown(monkeypatch):
+def test_run_returns_0_for_success(monkeypatch):
+    monkeypatch.setattr(cli, "TalendClient", MagicMock())
+    monkeypatch.setattr(cli, "validate_args", lambda args: None)
+    monkeypatch.setattr(cli, "load_credential", Mock(return_value=Mock()))
+    run_cli = Mock()
+    run_cli.return_value = "execution_successful"
+    monkeypatch.setattr(cli, "run_cli", run_cli)
+    args = cli.parse_args(["--job", "job1"])
+    result = cli.run(args)
+    run_cli.assert_called_once()
+    assert result == 0
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        "execution_successful",
+        "unknown",
+    ],
+)
+def test_run_returns_0_for_non_failure_statuses(monkeypatch, status):
     fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
     monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
-    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: "unknown")
+    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: status)
     args = cli.parse_args(["--job", "job1"])
     assert cli.run(args) == 0
 
@@ -419,36 +504,13 @@ def test_run_returns_0_on_unknown(monkeypatch):
         "terminated_shutdown",
     ],
 )
-def test_run_returns_1_on_failure(monkeypatch, status):
+def test_run_returns_1_for_failure_statuses(monkeypatch, status):
     fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    lambda *args, **kwargs: fake_client
     monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
     monkeypatch.setattr(cli, "run_cli", lambda **kwargs: status)
     args = cli.parse_args(["--job", "job1"])
     assert cli.run(args) == 1
-
-
-@pytest.mark.parametrize(
-    "missing_var",
-    [
-        pytest.param("ACCESS_TOKEN", id="access_token"),
-        pytest.param("API_URL", id="api_url"),
-    ],
-)
-def test_run_returns_2_on_missing_env_var(monkeypatch, missing_var):
-    monkeypatch.setattr(cli, "load_dotenv", lambda: None)
-    monkeypatch.delenv(missing_var, raising=False)
-    args = cli.parse_args(["--job", "job1"])
-    assert cli.run(args) == 2
-
-
-def test_run_returns_2_on_invalid_args(monkeypatch):
-    monkeypatch.setattr(cli, "validate_args", lambda args: "some error")
-    monkeypatch.setattr(cli, "TalendClient", Mock())
-    monkeypatch.setattr(cli, "run_cli", Mock())
-    args = Mock()
-    assert cli.run(args) == 2
 
 
 def test_run_returns_1_on_unhandled_exception(monkeypatch):

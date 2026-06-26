@@ -44,7 +44,12 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from .talend_client import POLL_INTERVAL, TalendClient
+from .talend_client import (
+    POLL_INTERVAL,
+    OAuthClientCredential,
+    StaticTokenCredential,
+    TalendClient,
+)
 
 logger = logging.getLogger(__name__)
 console = Console()
@@ -59,6 +64,25 @@ def require_env(name):
     if not value:
         raise ConfigError(f"Missing required environment variable: {name}")
     return value
+
+
+def load_credential():
+    api_url = require_env("TALEND_API_URL")
+    access_token = os.getenv("TALEND_ACCESS_TOKEN")
+    client_id = os.getenv("TALEND_CLIENT_ID")
+    client_secret = os.getenv("TALEND_CLIENT_SECRET")
+    if access_token:
+        logger.debug("Using static credential (PAT) for authentication")
+        return StaticTokenCredential(access_token)
+    elif client_id and client_secret:
+        logger.debug("Using OAuth client credentials flow for authentication")
+        return OAuthClientCredential(api_url, client_id, client_secret)
+    else:
+        raise ConfigError(
+            "Invalid authentication configuration. Provide environment variable:\n"
+            "  - TALEND_ACCESS_TOKEN, or\n"
+            "  - TALEND_CLIENT_ID and TALEND_CLIENT_SECRET"
+        )
 
 
 def format_iso_timestamp(timestamp):
@@ -308,9 +332,9 @@ def run(args):
             logger.error(error)
             return 2
         load_dotenv()
-        access_token = require_env("ACCESS_TOKEN")
-        api_url = require_env("API_URL")
-        with TalendClient(api_url, access_token) as client:
+        api_url = require_env("TALEND_API_URL")
+        credential = load_credential()
+        with TalendClient(api_url, credential) as client:
             jobs = client.get_jobs()
             status = run_cli(
                 job_name=args.job,
@@ -327,7 +351,7 @@ def run(args):
     except ConfigError as e:
         if args.debug:
             raise
-        logger.error("Config error: %s", e)
+        logger.error("Invalid configuration: %s", e)
         return 2
     except KeyboardInterrupt:
         logger.info("\nExiting")
