@@ -237,12 +237,12 @@ class _TalendSession(requests.Session):
     def _log_request(self, request):
         headers = dict(request.headers)
         logger.debug("HTTP %s %s", request.method, request.url)
-        logger.debug("Headers: %s", headers)
+        logger.debug("Request Headers: %s", headers)
         if request.body:
             body = request.body
             if isinstance(body, bytes):
                 body = body.decode("utf-8")
-            logger.debug("Body: %s", str(body)[: self.MAX_BODY_SIZE])
+            logger.debug("Request Body: %s", str(body)[: self.MAX_BODY_SIZE])
 
     def _log_response(self, method, response, elapsed_ms):
         logger.debug(
@@ -252,9 +252,9 @@ class _TalendSession(requests.Session):
             response.status_code,
             elapsed_ms,
         )
-        logger.debug("Headers: %s", dict(response.headers))
+        logger.debug("Response Headers: %s", dict(response.headers))
         if response.text:
-            logger.debug("Body: %s", response.text[: self.MAX_BODY_SIZE])
+            logger.debug("Response Body: %s", response.text[: self.MAX_BODY_SIZE])
 
     def _log_error(self, method, url, exc, elapsed_ms):
         response = getattr(exc, "response", None)

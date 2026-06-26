@@ -36,9 +36,10 @@ def test_session_logs_success(monkeypatch, caplog, session):
     monkeypatch.setattr(requests.Session, "send", fake_send)
     with caplog.at_level(logging.DEBUG):
         session.request("GET", url)
+    assert "Request Headers:" in caplog.text
     assert f"HTTP GET {url} -> {status_code} (45.0ms)" in caplog.text
-    assert "Headers:" in caplog.text
-    assert "Body: OK" in caplog.text
+    assert "Response Headers:" in caplog.text
+    assert "Response Body: OK" in caplog.text
 
 
 def test_session_logs_request_error(monkeypatch, caplog, session):
@@ -62,9 +63,10 @@ def test_session_logs_request_error(monkeypatch, caplog, session):
             match=f"{status_code} Client Error: None for url: {url}",
         ):
             resp.raise_for_status()
+    assert "Request Headers:" in caplog.text
     assert f"HTTP GET {url} -> {status_code} (45.0ms)" in caplog.text
-    assert "Headers:" in caplog.text
-    assert "Body: Not Found" in caplog.text
+    assert "Response Headers:" in caplog.text
+    assert "Response Body: Not Found" in caplog.text
 
 
 def test_session_logs_request_exception(monkeypatch, caplog, session):
