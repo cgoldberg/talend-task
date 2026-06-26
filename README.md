@@ -71,7 +71,8 @@ pip install talend-task
 
 ## CLI
 
-`talend_task` is a CLI for running and monitoring jobs in [Talend Cloud][talend-cloud].
+`talend_task` is a CLI for running and monitoring jobs in
+[Talend Cloud][talend-cloud].
 
 After installation, the `talend_task` command is available in your shell.
 
@@ -212,9 +213,11 @@ talend_task --activity --job Job1
 
 ## Python API Client
 
-Use the `TalendClient` class to interact with Talend Cloud from Python.
+Use the `TalendClient` and `Credential` classes to authenticate and interact
+with the [Talend Cloud][talend-cloud][Processing API][talend-processing-api]
+from Python.
 
-See the [API documentation][api-docs] for details.
+See the [module API documentation][api-docs] for more information.
 
 ### Example Client Usage
 
@@ -284,7 +287,7 @@ with TalendClient(api_url, credential) as client:
 ./
 ├── .github/
 │   └── workflows/
-│       └── docs.yml
+│       ├── docs.yml
 │       └── test.yml
 ├── src/
 │   └── talend_task/
@@ -293,7 +296,9 @@ with TalendClient(api_url, credential) as client:
 │       └── talend_client.py
 ├── tests/
 │   ├── test_cli.py
-│   └── test_talend_client.py
+│   ├── test_credential.py
+│   ├── test_talend_client.py
+│   └── test_talend_session.py
 ├── pyproject.toml
 └── tox.ini
 ```
