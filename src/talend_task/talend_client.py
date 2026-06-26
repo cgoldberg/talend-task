@@ -219,16 +219,30 @@ class _TalendSession(requests.Session):
     def request(self, method, url, **kwargs):
         headers = kwargs.setdefault("headers", {})
         self.credential.apply(headers)
+        return super().request(method, url, **kwargs)
+
+    def send(self, request, **kwargs):
+        self._log_request(request)
         start = time.monotonic()
         try:
-            response = super().request(method, url, **kwargs)
+            response = super().send(request, **kwargs)
             elapsed_ms = (time.monotonic() - start) * 1000
-            self._log_response(method, response, elapsed_ms)
+            self._log_response(request.method, response, elapsed_ms)
             return response
         except requests.RequestException as e:
             elapsed_ms = (time.monotonic() - start) * 1000
-            self._log_error(method, url, e, elapsed_ms)
+            self._log_error(request.method, request.url, e, elapsed_ms)
             raise
+
+    def _log_request(self, request):
+        headers = dict(request.headers)
+        logger.debug("HTTP %s %s", request.method, request.url)
+        logger.debug("Headers: %s", headers)
+        if request.body:
+            body = request.body
+            if isinstance(body, bytes):
+                body = body.decode("utf-8")
+            logger.debug("Body: %s", str(body)[: self.MAX_BODY_SIZE])
 
     def _log_response(self, method, response, elapsed_ms):
         logger.debug(
@@ -244,18 +258,17 @@ class _TalendSession(requests.Session):
 
     def _log_error(self, method, url, exc, elapsed_ms):
         response = getattr(exc, "response", None)
+        body = None
+        if response is not None and response.text:
+            body = response.text[: self.MAX_BODY_SIZE]
         logger.error(
-            "HTTP FAIL %s %s -> %s (%.1fms) | error=%s | body=%s",
+            "HTTP FAIL %s %s -> %s (%.1fms) | error=%r | body=%s",
             method,
             getattr(response, "url", url),
             getattr(response, "status_code", None),
             elapsed_ms,
-            repr(exc),
-            (
-                response.text[: self.MAX_BODY_SIZE]
-                if response is not None and response.text
-                else None
-            ),
+            exc,
+            body,
         )
 
 
