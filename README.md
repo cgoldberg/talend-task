@@ -214,7 +214,7 @@ talend_task --activity --job Job1
 ## Python API Client
 
 Use the `TalendClient` and `Credential` classes to authenticate and interact
-with the [Talend Cloud][talend-cloud][Processing API][talend-processing-api]
+with the [Talend Cloud][talend-cloud] [Processing API][talend-processing-api]
 from Python.
 
 See the [module API documentation][api-docs] for more information.
