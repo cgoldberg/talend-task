@@ -288,6 +288,7 @@ class OAuthClientCredential(Credential):
     """OAuth 2.0 Client Credentials flow with automatic token retrieval and refresh."""
 
     def __init__(self, api_url, client_id, client_secret, scope=None):
+        self.api_url = api_url
         self.token_url = api_url.rstrip("/") + "/security/oauth/token"
         self.client_id = client_id
         self.client_secret = client_secret
@@ -319,19 +320,13 @@ class OAuthClientCredential(Credential):
         resp = requests.post(
             self.token_url,
             auth=HTTPBasicAuth(self.client_id, self.client_secret),
-            data=self._build_payload(),
+            data={"audience": self.api_url, "grant_type": "client_credentials"},
             timeout=HTTP_TIMEOUT,
         )
         resp.raise_for_status()
         data = resp.json()
         self._access_token = data["access_token"]
         self._expires_at = self._compute_expiry(data)
-
-    def _build_payload(self) -> dict:
-        payload = {"grant_type": "client_credentials"}
-        if self.scope:
-            payload["scope"] = self.scope
-        return payload
 
     def _compute_expiry(self, token_response):
         expires_in = token_response.get("expires_in", 3600)

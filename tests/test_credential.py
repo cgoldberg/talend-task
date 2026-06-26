@@ -22,16 +22,6 @@ def oauth_credential():
     )
 
 
-@pytest.fixture
-def oauth_credential_with_scope():
-    return OAuthClientCredential(
-        api_url="https://api.example.com",
-        client_id="client-id",
-        client_secret="client-secret",
-        scope="read write",
-    )
-
-
 def test_static_token_adds_bearer_authorization_header():
     credential = StaticTokenCredential("my-token")
 
@@ -64,31 +54,6 @@ def test_oauth_client_token_url_is_normalized(api_url, expected):
         client_secret="secret",
     )
     assert credential.token_url == expected
-
-
-@pytest.mark.parametrize(
-    ("scope", "expected"),
-    [
-        pytest.param(
-            None,
-            {"grant_type": "client_credentials"},
-            id="no_scope",
-        ),
-        pytest.param(
-            "read write",
-            {"grant_type": "client_credentials", "scope": "read write"},
-            id="with_scope",
-        ),
-    ],
-)
-def test_oauth_client_build_payload(scope, expected):
-    credential = OAuthClientCredential(
-        api_url="https://api.example.com",
-        client_id="client",
-        client_secret="secret",
-        scope=scope,
-    )
-    assert credential._build_payload() == expected
 
 
 @pytest.mark.parametrize(
@@ -206,6 +171,27 @@ def test_oauth_client_apply(
     assert called is refresh_called
 
 
+def test_oauth_client_auth_payload(
+    monkeypatch,
+    oauth_credential,
+):
+    response = Mock()
+    response.json.return_value = {"access_token": "t", "expires_in": 3600}
+    captured = {}
+
+    def fake_post(*args, **kwargs):
+        captured["data"] = kwargs.get("data")
+        return response
+
+    monkeypatch.setattr("talend_task.talend_client.requests.post", fake_post)
+    monkeypatch.setattr(oauth_credential, "_compute_expiry", lambda _: 9999)
+    oauth_credential._refresh()
+    assert captured["data"] == {
+        "audience": oauth_credential.api_url,
+        "grant_type": "client_credentials",
+    }
+
+
 def test_oauth_client_refresh_fetches_token_and_updates_state(
     monkeypatch,
     oauth_credential,
@@ -224,27 +210,6 @@ def test_oauth_client_refresh_fetches_token_and_updates_state(
     response.raise_for_status.assert_called_once()
     assert oauth_credential._access_token == "new-token"
     assert oauth_credential._expires_at == 9999
-
-
-def test_oauth_client_refresh_sends_scope_when_configured(
-    monkeypatch,
-    oauth_credential_with_scope,
-):
-    response = Mock()
-    response.json.return_value = {"access_token": "t", "expires_in": 3600}
-    captured = {}
-
-    def fake_post(*args, **kwargs):
-        captured["data"] = kwargs.get("data")
-        return response
-
-    monkeypatch.setattr("talend_task.talend_client.requests.post", fake_post)
-    monkeypatch.setattr(oauth_credential_with_scope, "_compute_expiry", lambda _: 9999)
-    oauth_credential_with_scope._refresh()
-    assert captured["data"] == {
-        "grant_type": "client_credentials",
-        "scope": "read write",
-    }
 
 
 def test_oauth_client_refresh_propagates_http_errors(monkeypatch, oauth_credential):
