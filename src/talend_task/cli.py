@@ -367,7 +367,7 @@ def run(args):
     except Exception as e:
         if args.debug:
             raise
-        logger.exception("Unexpected error: %s", e)
+        logger.error("Unexpected error: %s", e)
         return 1
     return 0
 
