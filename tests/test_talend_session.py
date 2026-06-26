@@ -11,13 +11,13 @@ import requests
 from talend_task.talend_client import (
     TALEND_API_VERSION,
     StaticTokenCredential,
-    TalendSession,
+    _TalendSession,
 )
 
 
 @pytest.fixture
 def session():
-    return TalendSession(StaticTokenCredential("token123"))
+    return _TalendSession(StaticTokenCredential("token123"))
 
 
 def test_session_logs_success(monkeypatch, caplog, session):

@@ -76,7 +76,7 @@ class TalendClient:
     def __init__(self, api_url, credential):
         self.base_url = api_url.rstrip("/") + "/processing"
         self.credential = credential
-        self._session = TalendSession(credential)
+        self._session = _TalendSession(credential)
         self._jobs_cache = None
 
     def __enter__(self):
@@ -201,7 +201,7 @@ class TalendClient:
         return executions
 
 
-class TalendSession(requests.Session):
+class _TalendSession(requests.Session):
     """Requests session with logging and authentication for Talend Cloud API."""
 
     MAX_BODY_SIZE = 2000
