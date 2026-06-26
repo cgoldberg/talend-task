@@ -71,17 +71,18 @@ def test_post_calls_session_post(client):
         json=payload,
         timeout=HTTP_TIMEOUT,
     )
+    response.raise_for_status.assert_called_once()
 
 
 def test_get_raises_closed_client_error(client):
     client.close()
-    with pytest.raises(RuntimeError, match="TalendClient has been closed"):
+    with pytest.raises(RuntimeError, match="TalendClient is already closed"):
         client._get("/test")
 
 
 def test_post_raises_closed_client_error(client):
     client.close()
-    with pytest.raises(RuntimeError, match="TalendClient has been closed"):
+    with pytest.raises(RuntimeError, match="TalendClient is already closed"):
         client._post("/test", {"foo": "bar"})
 
 

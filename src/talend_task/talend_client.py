@@ -87,7 +87,7 @@ class TalendClient:
 
     def _require_open(self):
         if self._session is None:
-            raise RuntimeError("TalendClient has been closed")
+            raise RuntimeError("TalendClient is already closed")
         return self._session
 
     def _get(self, path):
@@ -123,7 +123,7 @@ class TalendClient:
                 self._session.close()
             self.credential.close()
         except Exception:
-            logger.exception("Error closing TalendClient resources")
+            logger.exception("Error closing resources")
         finally:
             self._session = None
             self._jobs_cache = None
