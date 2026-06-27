@@ -45,6 +45,7 @@ Design notes:
 - Logging is included at DEBUG/INFO/ERROR levels
 """
 
+import json
 import logging
 import time
 from abc import ABC, abstractmethod
@@ -201,10 +202,98 @@ class TalendClient:
         return executions
 
 
-class _TalendSession(requests.Session):
-    """Requests session with logging and authentication for Talend Cloud API."""
+class _LoggedSession(requests.Session):
+    """Requests session with logging."""
 
     MAX_BODY_SIZE = 2000
+
+    def send(self, request, **kwargs):
+        self._log_request(request)
+        start = time.monotonic()
+        try:
+            response = super().send(request, **kwargs)
+            elapsed_ms = (time.monotonic() - start) * 1000
+            self._log_response(request.method, response, elapsed_ms)
+            return response
+        except requests.RequestException as e:
+            elapsed_ms = (time.monotonic() - start) * 1000
+            self._log_error(request.method, request.url, e, elapsed_ms)
+            raise
+
+    def _format_headers(self, headers):
+        return "\n".join(f"  {k}: {v}" for k, v in headers.items())
+
+    def _format_body(self, body, content_type=None):
+        if body is None:
+            return None
+        body = (
+            body.decode("utf-8", errors="replace")
+            if isinstance(body, bytes)
+            else str(body)
+        )
+        if content_type and "application/json" in content_type.lower():
+            try:
+                body = json.dumps(json.loads(body), indent=2)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        if len(body) > self.MAX_BODY_SIZE:
+            body = body[: self.MAX_BODY_SIZE] + "\n... (truncated)"
+        return body
+
+    def _log_request(self, request):
+        body = self._format_body(
+            request.body,
+            request.headers.get("Content-Type"),
+        )
+        headers = self._format_headers(request.headers)
+        logger.debug(
+            "HTTP %s %s\nRequest Headers:\n%s%s",
+            request.method,
+            request.url,
+            headers,
+            f"\nRequest Body:\n{body}" if body else "",
+        )
+
+    def _log_response(self, method, response, elapsed_ms):
+        body = self._format_body(
+            response.text,
+            response.headers.get("Content-Type"),
+        )
+        headers = self._format_headers(response.headers)
+        logger.debug(
+            "HTTP %s %s -> %d (%.1fms)\nResponse Headers:\n%s%s",
+            method,
+            response.url,
+            response.status_code,
+            elapsed_ms,
+            headers,
+            f"\nResponse Body:\n{body}" if body else "",
+        )
+
+    def _log_error(self, method, url, exc, elapsed_ms):
+        response = getattr(exc, "response", None)
+        body = None
+        headers = ""
+        if response is not None:
+            body = self._format_body(
+                response.text,
+                response.headers.get("Content-Type"),
+            )
+            headers = self._format_headers(response.headers)
+        logger.error(
+            "HTTP FAIL %s %s -> %s (%.1fms)\nError: %r%s%s",
+            method,
+            getattr(response, "url", url),
+            getattr(response, "status_code", None),
+            elapsed_ms,
+            exc,
+            f"\nResponse Headers:\n{headers}" if headers else "",
+            f"\nResponse Body:\n{body}" if body else "",
+        )
+
+
+class _TalendSession(_LoggedSession):
+    """Requests session with logging and authentication for Talend Cloud API."""
 
     def __init__(self, credential):
         super().__init__()
@@ -220,56 +309,6 @@ class _TalendSession(requests.Session):
         headers = kwargs.setdefault("headers", {})
         self.credential.apply(headers)
         return super().request(method, url, **kwargs)
-
-    def send(self, request, **kwargs):
-        self._log_request(request)
-        start = time.monotonic()
-        try:
-            response = super().send(request, **kwargs)
-            elapsed_ms = (time.monotonic() - start) * 1000
-            self._log_response(request.method, response, elapsed_ms)
-            return response
-        except requests.RequestException as e:
-            elapsed_ms = (time.monotonic() - start) * 1000
-            self._log_error(request.method, request.url, e, elapsed_ms)
-            raise
-
-    def _log_request(self, request):
-        headers = dict(request.headers)
-        logger.debug("HTTP %s %s", request.method, request.url)
-        logger.debug("Request Headers: %s", headers)
-        if request.body:
-            body = request.body
-            if isinstance(body, bytes):
-                body = body.decode("utf-8")
-            logger.debug("Request Body: %s", str(body)[: self.MAX_BODY_SIZE])
-
-    def _log_response(self, method, response, elapsed_ms):
-        logger.debug(
-            "HTTP %s %s -> %s (%.1fms)",
-            method,
-            response.url,
-            response.status_code,
-            elapsed_ms,
-        )
-        logger.debug("Response Headers: %s", dict(response.headers))
-        if response.text:
-            logger.debug("Response Body: %s", response.text[: self.MAX_BODY_SIZE])
-
-    def _log_error(self, method, url, exc, elapsed_ms):
-        response = getattr(exc, "response", None)
-        body = None
-        if response is not None and response.text:
-            body = response.text[: self.MAX_BODY_SIZE]
-        logger.error(
-            "HTTP FAIL %s %s -> %s (%.1fms) | error=%r | body=%s",
-            method,
-            getattr(response, "url", url),
-            getattr(response, "status_code", None),
-            elapsed_ms,
-            exc,
-            body,
-        )
 
 
 class Credential(ABC):
@@ -309,7 +348,7 @@ class OAuthClientCredential(Credential):
         self._access_token = None
         self._expires_at = 0
         self._buffer_seconds = 30  # refresh slightly early
-        self._session = requests.Session()
+        self._session = _LoggedSession()
 
     def apply(self, headers):
         """Apply authentication to headers, fetching or refreshing token if needed."""

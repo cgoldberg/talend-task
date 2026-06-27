@@ -21,8 +21,8 @@ def session():
 
 
 def test_session_logs_success(monkeypatch, caplog, session):
-    status_code = 200
     url = "https://api.example.com/foo"
+    status_code = 200
 
     def fake_send(self, request, **kwargs):
         resp = requests.Response()
@@ -36,15 +36,15 @@ def test_session_logs_success(monkeypatch, caplog, session):
     monkeypatch.setattr(requests.Session, "send", fake_send)
     with caplog.at_level(logging.DEBUG):
         session.request("GET", url)
-    assert "Request Headers:" in caplog.text
     assert f"HTTP GET {url} -> {status_code} (45.0ms)" in caplog.text
+    assert "Request Headers:" in caplog.text
     assert "Response Headers:" in caplog.text
-    assert "Response Body: OK" in caplog.text
+    assert "Response Body:\nOK" in caplog.text
 
 
 def test_session_logs_request_error(monkeypatch, caplog, session):
-    status_code = 404
     url = "https://api.example.com/notfound"
+    status_code = 404
 
     def fake_send(self, request, **kwargs):
         resp = requests.Response()
@@ -63,34 +63,32 @@ def test_session_logs_request_error(monkeypatch, caplog, session):
             match=f"{status_code} Client Error: None for url: {url}",
         ):
             resp.raise_for_status()
-    assert "Request Headers:" in caplog.text
     assert f"HTTP GET {url} -> {status_code} (45.0ms)" in caplog.text
+    assert "Request Headers:" in caplog.text
     assert "Response Headers:" in caplog.text
-    assert "Response Body: Not Found" in caplog.text
+    assert "Response Body:\nNot Found" in caplog.text
 
 
 def test_session_logs_request_exception(monkeypatch, caplog, session):
-    error = "boom"
+    url = "https://api.example.com/foo"
+    error_msg = "boom"
 
     def fake_send(self, request, **kwargs):
-        raise requests.RequestException(error)
+        raise requests.RequestException(error_msg)
 
     times = iter([100.0, 100.045])
     monkeypatch.setattr(time, "monotonic", lambda: next(times))
     monkeypatch.setattr(requests.Session, "send", fake_send)
-    url = "https://api.example.com/foo"
-    with pytest.raises(requests.RequestException, match=error):
-        session.request("GET", url)
-    msg = (
-        f"HTTP FAIL GET {url} -> None (45.0ms) "
-        f"| error=RequestException('{error}') | body=None"
-    )
-    assert msg in caplog.text
+    with caplog.at_level(logging.DEBUG):
+        with pytest.raises(requests.RequestException, match=error_msg):
+            session.request("GET", url)
+    assert f"HTTP FAIL GET {url} -> None (45.0ms)" in caplog.text
+    assert "Request Headers:" in caplog.text
+    assert f"Error: RequestException('{error_msg}')"
 
 
 def test_session_auth(monkeypatch, session):
     url = "https://api.example.com/foo"
-    access_token = "token123"
     captured = {}
 
     def fake_send(self, request, **kwargs):
@@ -103,6 +101,6 @@ def test_session_auth(monkeypatch, session):
     monkeypatch.setattr(time, "monotonic", lambda: next(times))
     monkeypatch.setattr(requests.Session, "send", fake_send)
     session.request("GET", url)
-    assert captured["headers"]["Authorization"] == f"Bearer {access_token}"
+    assert captured["headers"]["Authorization"] == "Bearer token123"
     assert captured["headers"]["Content-Type"] == "application/json"
     assert captured["headers"]["talend-version"] == TALEND_API_VERSION
