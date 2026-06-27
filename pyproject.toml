@@ -15,6 +15,7 @@ requires-python = ">=3.10"
 keywords = [
     "talend",
     "talend-cloud",
+    "qlik",
     "etl",
     "pipeline",
     "cli",
