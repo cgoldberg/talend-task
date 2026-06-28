@@ -25,6 +25,8 @@
     <td>
       <a href="https://github.com/cgoldberg/talend-task/actions/workflows/test.yml">
         <img src="https://github.com/cgoldberg/talend-task/actions/workflows/test.yml/badge.svg">
+      </a>
+      <a href="https://github.com/cgoldberg/talend-task/actions/workflows/docs.yml">
         <img src="https://github.com/cgoldberg/talend-task/actions/workflows/docs.yml/badge.svg">
       </a>
     </td>
