@@ -320,8 +320,12 @@ class Credential(ABC):
         raise NotImplementedError
 
     def close(self):
-        """Close resources."""
-        pass
+         """Close resources.
+
+        Subclasses may override this method to perform cleanup. The base
+        implementation is a no-op.
+        """
+        return None
 
 
 class StaticTokenCredential(Credential):

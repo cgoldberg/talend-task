@@ -80,7 +80,10 @@ respect-gitignore = true
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "PT", "RUF", "TID", "W"]
+select = [
+    "B", "E", "F", "FURB", "G", "I", "ICN", "LOG", "N",
+    "PERF", "PT", "PTH", "Q", "RUF", "T20", "TID", "W",
+]
 fixable = ["ALL"]
 
 [tool.ruff.format]

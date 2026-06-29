@@ -164,7 +164,7 @@ def select_job(jobs):
         if job_number < 1 or job_number > len(jobs):
             raise ValueError()
     except ValueError:
-        raise ValueError("Invalid job number")
+        raise ValueError("Invalid job number") from None
     return jobs[job_number - 1]
 
 
