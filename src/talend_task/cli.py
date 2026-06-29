@@ -44,7 +44,7 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 from rich.console import Console
@@ -82,15 +82,14 @@ def load_credential():
     if access_token:
         logger.debug("Using static credential (PAT) for authentication")
         return StaticTokenCredential(access_token)
-    elif client_id and client_secret:
+    if client_id and client_secret:
         logger.debug("Using OAuth client credentials flow for authentication")
         return OAuthClientCredential(api_url, client_id, client_secret)
-    else:
-        raise ConfigError(
-            "Invalid authentication configuration. Provide environment variable:\n"
-            "  - TALEND_ACCESS_TOKEN, or\n"
-            "  - TALEND_CLIENT_ID and TALEND_CLIENT_SECRET"
-        )
+    raise ConfigError(
+        "Invalid authentication configuration. Provide environment variable:\n"
+        "  - TALEND_ACCESS_TOKEN, or\n"
+        "  - TALEND_CLIENT_ID and TALEND_CLIENT_SECRET"
+    )
 
 
 def format_iso_timestamp(timestamp):
@@ -106,8 +105,8 @@ def convert_time(seconds):
 
 def compute_duration(start_timestamp, end_timestamp):
     fmt = "%Y-%m-%dT%H:%M:%S.%fZ"
-    start_dt = datetime.strptime(start_timestamp, fmt)
-    end_dt = datetime.strptime(end_timestamp, fmt)
+    start_dt = datetime.strptime(start_timestamp, fmt).replace(tzinfo=timezone.utc)
+    end_dt = datetime.strptime(end_timestamp, fmt).replace(tzinfo=timezone.utc)
     elapsed_secs = (end_dt - start_dt).total_seconds()
     return convert_time(elapsed_secs)
 
@@ -161,10 +160,10 @@ def select_job(jobs):
     job_number = input("\nSelect a job number: ")
     try:
         job_number = int(job_number)
-        if job_number < 1 or job_number > len(jobs):
-            raise ValueError()
     except ValueError:
         raise ValueError("Invalid job number") from None
+    if job_number < 1 or job_number > len(jobs):
+        raise ValueError("Invalid job number")
     return jobs[job_number - 1]
 
 
@@ -172,17 +171,16 @@ def run_job(client, job_id, timeout, poll_interval, wait=True):
     if not wait:
         status = client.run(job_id)
         return status, None
-    else:
-        start = time.monotonic()
-        status = client.run(
-            job_id,
-            wait=True,
-            timeout=timeout,
-            poll_interval=poll_interval,
-        )
-        stop = time.monotonic()
-        elapsed_time = convert_time(stop - start)
-        return status, elapsed_time
+    start = time.monotonic()
+    status = client.run(
+        job_id,
+        wait=True,
+        timeout=timeout,
+        poll_interval=poll_interval,
+    )
+    stop = time.monotonic()
+    elapsed_time = convert_time(stop - start)
+    return status, elapsed_time
 
 
 def run_cli(
@@ -251,8 +249,7 @@ def run_cli(
     else:
         console.print(
             Panel.fit(
-                "[bold green]✓ Submitted[/bold green]\n"
-                + f"[bold]Job:[/bold] {job_name}",
+                f"[bold green]✓ Submitted[/bold green]\n[bold]Job:[/bold] {job_name}",
                 border_style="green",
             )
         )

@@ -8,17 +8,17 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 
-import talend_task.cli as cli
+from talend_task import cli
 
 
 def _make_args(**kwargs):
-    defaults = dict(
-        job=None,
-        timeout=None,
-        poll_interval=None,
-        wait=True,
-        activity=False,
-    )
+    defaults = {
+        "wait": True,
+        "activity": False,
+        "timeout": None,
+        "poll_interval": None,
+        "job": None,
+    }
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)
 
@@ -162,35 +162,35 @@ def test_format_iso_timestamp(timestamp, expected):
     [
         pytest.param(
             [],
-            dict(
-                wait=False,
-                activity=False,
-                timeout=None,
-                poll_interval=None,
-                job=None,
-            ),
+            {
+                "wait": False,
+                "activity": False,
+                "timeout": None,
+                "poll_interval": None,
+                "job": None,
+            },
             id="defaults",
         ),
         pytest.param(
             ["--activity", "--job", "job1"],
-            dict(
-                wait=False,
-                activity=True,
-                timeout=None,
-                poll_interval=None,
-                job="job1",
-            ),
+            {
+                "wait": False,
+                "activity": True,
+                "timeout": None,
+                "poll_interval": None,
+                "job": "job1",
+            },
             id="activity_no_wait",
         ),
         pytest.param(
             ["--wait", "--timeout", "30", "--poll-interval", "10", "--job", "job1"],
-            dict(
-                wait=True,
-                activity=False,
-                timeout=30,
-                poll_interval=10,
-                job="job1",
-            ),
+            {
+                "wait": True,
+                "activity": False,
+                "timeout": 30,
+                "poll_interval": 10,
+                "job": "job1",
+            },
             id="timeout_poll_wait",
         ),
     ],
@@ -231,13 +231,13 @@ def test_parse_flags(args_list, expected):
     ],
 )
 def test_validate_args_valid(overrides):
-    base = dict(
-        job=None,
-        timeout=None,
-        poll_interval=None,
-        wait=False,
-        activity=False,
-    )
+    base = {
+        "job": None,
+        "timeout": None,
+        "poll_interval": None,
+        "wait": False,
+        "activity": False,
+    }
     args = argparse.Namespace(**{**base, **overrides})
     result = cli.validate_args(args)
     assert result is None
@@ -285,13 +285,13 @@ def test_validate_args_valid(overrides):
     ],
 )
 def test_validate_args_invalid(overrides):
-    base = dict(
-        job=None,
-        timeout=None,
-        poll_interval=None,
-        wait=False,
-        activity=False,
-    )
+    base = {
+        "job": None,
+        "timeout": None,
+        "poll_interval": None,
+        "wait": False,
+        "activity": False,
+    }
     args = argparse.Namespace(**{**base, **overrides})
     result = cli.validate_args(args)
     assert isinstance(result, str)
@@ -423,7 +423,7 @@ def test_run_cli_invalid_selection(monkeypatch):
 
 
 def test_run_cli_activity(monkeypatch):
-    def fake_show_activity(job_name, executions):
+    def fake_show_activity(_job_name, _executions):
         fake_show_activity.called = True
 
     client = Mock()
@@ -446,18 +446,18 @@ def test_run_cli_activity(monkeypatch):
 
 def test_run_returns_2_for_invalid_args(monkeypatch):
     monkeypatch.setattr(cli, "TalendClient", MagicMock())
-    monkeypatch.setattr(cli, "validate_args", lambda args: "error")
+    monkeypatch.setattr(cli, "validate_args", lambda _args: "error")
     monkeypatch.setattr(cli, "load_credential", Mock())
     monkeypatch.setattr(cli, "run_cli", Mock())
     assert cli.run(Mock()) == 2
 
 
 def test_run_returns_2_for_credential_error(monkeypatch):
-    def raise_config_error(*args, **kwargs):
+    def raise_config_error(*_args, **_kwargs):
         raise cli.ConfigError("bad config")
 
     monkeypatch.setattr(cli, "TalendClient", MagicMock())
-    monkeypatch.setattr(cli, "validate_args", lambda args: None)
+    monkeypatch.setattr(cli, "validate_args", lambda _args: None)
     monkeypatch.setattr(cli, "run_cli", Mock())
     monkeypatch.setattr(cli, "load_credential", raise_config_error)
     args = cli.parse_args(["--job", "job1"])
@@ -466,7 +466,7 @@ def test_run_returns_2_for_credential_error(monkeypatch):
 
 def test_run_returns_0_for_success(monkeypatch):
     monkeypatch.setattr(cli, "TalendClient", MagicMock())
-    monkeypatch.setattr(cli, "validate_args", lambda args: None)
+    monkeypatch.setattr(cli, "validate_args", lambda _args: None)
     monkeypatch.setattr(cli, "load_credential", Mock(return_value=Mock()))
     run_cli = Mock()
     run_cli.return_value = "execution_successful"
@@ -487,8 +487,8 @@ def test_run_returns_0_for_success(monkeypatch):
 def test_run_returns_0_for_non_failure_statuses(monkeypatch, status):
     fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
-    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: status)
+    monkeypatch.setattr(cli, "TalendClient", lambda *_args, **_kwargs: fake_client)
+    monkeypatch.setattr(cli, "run_cli", lambda **_kwargs: status)
     args = cli.parse_args(["--job", "job1"])
     assert cli.run(args) == 0
 
@@ -507,8 +507,8 @@ def test_run_returns_0_for_non_failure_statuses(monkeypatch, status):
 def test_run_returns_1_for_failure_statuses(monkeypatch, status):
     fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
-    monkeypatch.setattr(cli, "run_cli", lambda **kwargs: status)
+    monkeypatch.setattr(cli, "TalendClient", lambda *_args, **_kwargs: fake_client)
+    monkeypatch.setattr(cli, "run_cli", lambda **_kwargs: status)
     args = cli.parse_args(["--job", "job1"])
     assert cli.run(args) == 1
 
@@ -516,19 +516,19 @@ def test_run_returns_1_for_failure_statuses(monkeypatch, status):
 def test_run_returns_1_on_unhandled_exception(monkeypatch):
     fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
+    monkeypatch.setattr(cli, "TalendClient", lambda *_args, **_kwargs: fake_client)
     monkeypatch.setattr(cli, "run_cli", Mock(side_effect=Exception("boom")))
     args = cli.parse_args(["--job", "job1"])
     assert cli.run(args) == 1
 
 
 def test_run_returns_130_on_keyboard_interrupt(monkeypatch):
-    def boom(**kwargs):
-        raise KeyboardInterrupt()
+    def boom(**_kwargs):
+        raise KeyboardInterrupt
 
     fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
+    monkeypatch.setattr(cli, "TalendClient", lambda *_args, **_kwargs: fake_client)
     monkeypatch.setattr(cli, "run_cli", boom)
     args = cli.parse_args(["--job", "job1"])
     assert cli.run(args) == 130
@@ -542,7 +542,7 @@ def test_run_parses_args_and_passes_values(monkeypatch):
     called = {}
     fake_client = MagicMock()
     fake_client.get_jobs.return_value = [("job1", "id1")]
-    monkeypatch.setattr(cli, "TalendClient", lambda *args, **kwargs: fake_client)
+    monkeypatch.setattr(cli, "TalendClient", lambda *_args, **_kwargs: fake_client)
     monkeypatch.setattr(cli, "run_cli", fake_run_cli)
     args = cli.parse_args(["--wait", "--poll-interval", "10", "--job", "job1"])
     assert cli.run(args) == 0
@@ -553,7 +553,7 @@ def test_run_parses_args_and_passes_values(monkeypatch):
 
 def test_main_exits_with_code_from_run(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["prog"])
-    monkeypatch.setattr(cli, "run", lambda args: 0)
+    monkeypatch.setattr(cli, "run", lambda _args: 0)
     with pytest.raises(SystemExit) as exc:
         cli.main()
     assert exc.value.code == 0

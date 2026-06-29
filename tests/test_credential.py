@@ -123,7 +123,7 @@ def test_oauth_client_compute_expiry(
         pytest.param(
             None,
             0,
-            lambda cred: setattr(cred, "_access_token", "fresh-token"),
+            lambda _cred: setattr(_cred, "_access_token", "fresh-token"),
             "fresh-token",
             True,
             id="no_token_triggers_refresh",
@@ -131,7 +131,7 @@ def test_oauth_client_compute_expiry(
         pytest.param(
             "old-token",
             -1,
-            lambda cred: setattr(cred, "_access_token", "refreshed-token"),
+            lambda _cred: setattr(_cred, "_access_token", "refreshed-token"),
             "refreshed-token",
             True,
             id="expired_token_triggers_refresh",
@@ -139,7 +139,7 @@ def test_oauth_client_compute_expiry(
         pytest.param(
             "valid-token",
             3600,
-            lambda cred: None,
+            lambda _cred: None,
             "valid-token",
             False,
             id="valid_token_no_refresh",
@@ -179,8 +179,8 @@ def test_oauth_client_auth_payload(
     response.json.return_value = {"access_token": "t", "expires_in": 3600}
     captured = {}
 
-    def fake_post(*args, **kwargs):
-        captured["data"] = kwargs.get("data")
+    def fake_post(*_args, **_kwargs):
+        captured["data"] = _kwargs.get("data")
         return response
 
     monkeypatch.setattr("talend_task.talend_client.requests.post", fake_post)
@@ -203,7 +203,7 @@ def test_oauth_client_refresh_fetches_token_and_updates_state(
     }
     monkeypatch.setattr(
         "talend_task.talend_client.requests.post",
-        lambda *args, **kwargs: response,
+        lambda *_args, **_kwargs: response,
     )
     monkeypatch.setattr(oauth_credential, "_compute_expiry", lambda _: 9999)
     oauth_credential._refresh()
@@ -217,7 +217,7 @@ def test_oauth_client_refresh_propagates_http_errors(monkeypatch, oauth_credenti
     response.raise_for_status.side_effect = RuntimeError("boom")
     monkeypatch.setattr(
         "talend_task.talend_client.requests.post",
-        lambda *args, **kwargs: response,
+        lambda *_args, **_kwargs: response,
     )
     with pytest.raises(RuntimeError, match="boom"):
         oauth_credential._refresh()

@@ -38,9 +38,8 @@ def test_context_manager_closes_session(client):
 def test_context_manager_closes_on_exception(client):
     fake_session = MagicMock()
     client._session = fake_session
-    with pytest.raises(ValueError, match="boom"):
-        with client:
-            raise ValueError("boom")
+    with pytest.raises(ValueError, match="boom"), client:
+        raise ValueError("boom")
     fake_session.close.assert_called_once()
 
 

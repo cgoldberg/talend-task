@@ -24,10 +24,10 @@ def test_session_logs_success(monkeypatch, caplog, session):
     url = "https://api.example.com/foo"
     status_code = 200
 
-    def fake_send(self, request, **kwargs):
+    def fake_send(_self, _request, **_kwargs):
         resp = requests.Response()
         resp.status_code = 200
-        resp.url = request.url
+        resp.url = _request.url
         resp._content = b"OK"
         return resp
 
@@ -46,10 +46,10 @@ def test_session_logs_request_error(monkeypatch, caplog, session):
     url = "https://api.example.com/notfound"
     status_code = 404
 
-    def fake_send(self, request, **kwargs):
+    def fake_send(_self, _request, **_kwargs):
         resp = requests.Response()
         resp.status_code = status_code
-        resp.url = request.url
+        resp.url = _request.url
         resp._content = b"Not Found"
         return resp
 
@@ -73,28 +73,30 @@ def test_session_logs_request_exception(monkeypatch, caplog, session):
     url = "https://api.example.com/foo"
     error_msg = "boom"
 
-    def fake_send(self, request, **kwargs):
+    def fake_send(_self, _request, **_kwargs):
         raise requests.RequestException(error_msg)
 
     times = iter([100.0, 100.045])
     monkeypatch.setattr(time, "monotonic", lambda: next(times))
     monkeypatch.setattr(requests.Session, "send", fake_send)
-    with caplog.at_level(logging.DEBUG):
-        with pytest.raises(requests.RequestException, match=error_msg):
-            session.request("GET", url)
+    with (
+        caplog.at_level(logging.DEBUG),
+        pytest.raises(requests.RequestException, match=error_msg),
+    ):
+        session.request("GET", url)
     assert f"HTTP FAIL GET {url} -> None (45.0ms)" in caplog.text
     assert "Request Headers:" in caplog.text
-    assert f"Error: RequestException('{error_msg}')"
+    assert f"Error: RequestException('{error_msg}')" in caplog.text
 
 
 def test_session_auth(monkeypatch, session):
     url = "https://api.example.com/foo"
     captured = {}
 
-    def fake_send(self, request, **kwargs):
-        captured["headers"] = request.headers
+    def fake_send(_self, _request, **_kwargs):
+        captured["headers"] = _request.headers
         resp = requests.Response()
-        resp.url = request.url
+        resp.url = _request.url
         return resp
 
     times = iter([100.0, 100.045])

@@ -49,6 +49,7 @@ import json
 import logging
 import time
 from abc import ABC, abstractmethod
+from contextlib import suppress
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -160,11 +161,10 @@ class TalendClient:
             logger.info("Status: %s", status)
             if status not in pending_statuses:
                 return status
-            if timeout:
-                if time.monotonic() - start >= timeout:
-                    raise TimeoutError(
-                        f"Job {job_id} did not complete within {timeout} seconds"
-                    )
+            if timeout and time.monotonic() - start >= timeout:
+                raise TimeoutError(
+                    f"Job {job_id} did not complete within {timeout} seconds"
+                )
             time.sleep(poll_interval)
 
     def run_job(self, job_id):
@@ -179,8 +179,7 @@ class TalendClient:
     def get_execution_status(self, execution_id):
         """Retrieve current status of a job execution."""
         result = self._get(f"/executions/{execution_id}")
-        status = result["status"]
-        return status
+        return result["status"]
 
     def get_executions(self, job_id, limit=20):
         """Retrieve recent executions for a job."""
@@ -197,12 +196,11 @@ class TalendClient:
             }
             for item in items
         ]
-        executions = sorted(
+        return sorted(
             executions,
             key=lambda x: x.get("start_timestamp") or "",
             reverse=True,
         )[:limit]
-        return executions
 
 
 class _LoggedSession(requests.Session):
@@ -213,15 +211,16 @@ class _LoggedSession(requests.Session):
     def send(self, request, **kwargs):
         self._log_request(request)
         start = time.monotonic()
+
         try:
             response = super().send(request, **kwargs)
-            elapsed_ms = (time.monotonic() - start) * 1000
-            self._log_response(request.method, response, elapsed_ms)
-            return response
         except requests.RequestException as e:
             elapsed_ms = (time.monotonic() - start) * 1000
             self._log_error(request.method, request.url, e, elapsed_ms)
             raise
+        elapsed_ms = (time.monotonic() - start) * 1000
+        self._log_response(request.method, response, elapsed_ms)
+        return response
 
     def _format_headers(self, headers):
         return "\n".join(f"  {k}: {v}" for k, v in headers.items())
@@ -235,10 +234,8 @@ class _LoggedSession(requests.Session):
             else str(body)
         )
         if content_type and "application/json" in content_type.lower():
-            try:
+            with suppress(json.JSONDecodeError, TypeError):
                 body = json.dumps(json.loads(body), indent=2)
-            except (json.JSONDecodeError, TypeError):
-                pass
         if len(body) > self.MAX_BODY_SIZE:
             body = body[: self.MAX_BODY_SIZE] + "\n... (truncated)"
         return body
@@ -328,7 +325,7 @@ class Credential(ABC):
         Subclasses may override this method to perform cleanup. The base
         implementation is a no-op.
         """
-        return None
+        return
 
 
 class StaticTokenCredential(Credential):
