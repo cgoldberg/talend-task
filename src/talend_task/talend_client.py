@@ -320,7 +320,7 @@ class Credential(ABC):
         raise NotImplementedError
 
     def close(self):
-         """Close resources.
+        """Close resources.
 
         Subclasses may override this method to perform cleanup. The base
         implementation is a no-op.
