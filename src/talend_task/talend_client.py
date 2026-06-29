@@ -130,8 +130,11 @@ class TalendClient:
             self._jobs_cache = None
 
     def get_jobs(self):
-        """List available jobs and their IDs."""
-        return [(item["name"], item["executable"]) for item in self._jobs()]
+        """List available jobs with IDs."""
+        return [
+            (item["name"], item["executable"])
+            for item in sorted(self._jobs(), key=lambda item: item["name"].casefold())
+        ]
 
     def get_job_id(self, job_name):
         """Look up a job ID by name."""
