@@ -11,21 +11,16 @@ permissions:
 jobs:
   docs:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v7
-
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.14"
-
       - name: Install dependencies
         run: pip install pdoc
-
       - name: Install package
         run: pip install -e .
-
       - name: Build API docs
         run: |
           echo "Building docs..."
@@ -36,13 +31,11 @@ jobs:
             --docformat markdown \
             --footer-text "github.com/cgoldberg/talend-task (${GITHUB_SHA:0:7})"
           echo "Docs successfully built"
-
       - name: Publish API docs to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./site
-
       - name: Show published URL
         run: |
           echo "Published API docs URL: https://coreygoldberg.com/talend-task"
