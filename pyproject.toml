@@ -81,12 +81,11 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = [
+extend-ignore = [
     "ANN", "COM812", "D", "EM101", "EM102", "FBT002",
     "PLR", "S101", "TRY003", "TRY400"
 ]
 fixable = ["ALL"]
-
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["INP001", "S105", "S106", "SLF001"]
 
