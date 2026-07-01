@@ -149,7 +149,7 @@ export TALEND_CLIENT_SECRET=<client-secret>
 #### Using a `.env` File
 
 Instead of setting environment variables, you can define them in a `.env`
-file in the current directory.
+file in the installation directory or higher up the directory tree.
 
 ##### User account
 
