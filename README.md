@@ -123,8 +123,7 @@ identity.
 
 Regular user accounts authenticate using a **Personal Access Token (PAT)**. A
 PAT represents a specific user and inherits that user's permissions. Personal
-access tokens are generated in the
-[Talend Management Console][talend-management-console].
+access tokens are generated in [Talend Management Console][talend-management-console].
 
 - **`TALEND_ACCESS_TOKEN`**: Personal Access Token
 
