@@ -81,12 +81,12 @@ target-version = "py310"
 select = ["ALL"]
 ignore = [
     "ANN", "COM812", "D", "EM101", "EM102", "FBT",
-    "PLR", "S101", "TRY003", "TRY400"
+    "PLR", "S101", "S105", "S106", "TRY003", "TRY400"
 ]
 fixable = ["ALL"]
 
 [tool.ruff.lint.per-file-ignores]
-"**/test_*.py" = ["ARG001"]
+"**/test_*.py" = ["INP001", "SLF001"]
 
 [tool.ruff.format]
 docstring-code-line-length = 88
