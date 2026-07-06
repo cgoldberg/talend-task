@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "talend-task"
-version = "0.1.17dev0"
+version = "0.1.17"
 description = "CLI and Python API for running Talend Cloud jobs"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -86,7 +86,7 @@ ignore = [
 fixable = ["ALL"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["INP001", "S105", "S106", "SLF001"]
+"**/test_*.py" = ["ARG001"]
 
 [tool.ruff.format]
 docstring-code-line-length = 88
