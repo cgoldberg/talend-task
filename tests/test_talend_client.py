@@ -18,8 +18,8 @@ from talend_task.talend_client import (
 def client():
     with TalendClient(
         "https://api.example.com", StaticTokenCredential("token123")
-    ) as fclient:
-        yield fclient
+    ) as client:
+        yield client
 
 
 def test_client_sets_headers(client):
