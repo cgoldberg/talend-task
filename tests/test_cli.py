@@ -554,6 +554,6 @@ def test_run_parses_args_and_passes_values(monkeypatch):
 def test_main_exits_with_code_from_run(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["prog"])
     monkeypatch.setattr(cli, "run", lambda _args: 0)
-    with pytest.raises(SystemExit) as exc:
+    with pytest.raises(SystemExit) as e:
         cli.main()
-    assert exc.value.code == 0
+    assert e.value.code == 0
