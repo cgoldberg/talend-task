@@ -33,7 +33,6 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
-
 dependencies = [
     "python-dotenv==1.2.3",
     "requests==2.34.2",
