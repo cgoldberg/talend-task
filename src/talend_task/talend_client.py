@@ -54,6 +54,17 @@ from contextlib import suppress
 import requests
 from requests.auth import HTTPBasicAuth
 
+__all__ = [
+    "HTTP_TIMEOUT",
+    "POLL_INTERVAL",
+    "TALEND_API_VERSION",
+    "Credential",
+    "OAuthClientCredential",
+    "StaticTokenCredential",
+    "TalendClient",
+]
+
+
 logger = logging.getLogger(__name__)
 
 

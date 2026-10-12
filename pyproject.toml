@@ -25,6 +25,7 @@ keywords = [
 ]
 classifiers = [
     "Environment :: Console",
+    "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -32,9 +33,10 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 dependencies = [
-    "python-dotenv==1.2.3",
+    "python-dotenv==1.2.4",
     "requests==2.34.2",
     "rich==15.0.0",
 ]
@@ -50,6 +52,9 @@ download = "https://pypi.org/project/talend-task"
 [dependency-groups]
 dev = [
     "tox",
+]
+docs = [
+    "pdoc",
 ]
 lint = [
     "ruff",
