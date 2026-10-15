@@ -282,28 +282,6 @@ with TalendClient(api_url, credential) as client:
     tox
     ```
 
-## Project Structure
-
-```
-./
-├── .github/
-│   └── workflows/
-│       ├── docs.yml
-│       └── test.yml
-├── src/
-│   └── talend_task/
-│       ├── __init__.py
-│       ├── cli.py
-│       └── talend_client.py
-├── tests/
-│   ├── test_cli.py
-│   ├── test_credential.py
-│   ├── test_talend_client.py
-│   └── test_talend_session.py
-├── pyproject.toml
-└── tox.ini
-```
-
 [github-profile]: https://github.com/cgoldberg
 [github-repo]: https://github.com/cgoldberg/talend-task
 [pypi-home]: https://pypi.org/project/talend-task
