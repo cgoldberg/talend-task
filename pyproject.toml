@@ -48,6 +48,9 @@ repository = "https://github.com/cgoldberg/talend-task"
 documentation = "https://coreygoldberg.com/talend-task"
 
 [dependency-groups]
+build = [
+    "twine==7.0.0",
+]
 docs = [
     "pdoc==16.0.0",
 ]
