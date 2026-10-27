@@ -734,7 +734,7 @@ wheels = [
 
 [[package]]
 name = "talend-task"
-version = "0.1.19.dev0"
+version = "0.1.19"
 source = { editable = "." }
 dependencies = [
     { name = "python-dotenv" },
