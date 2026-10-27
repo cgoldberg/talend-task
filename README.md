@@ -65,11 +65,12 @@ a corresponding Talend Execution.
 
 ## Installation
 
-Install the package from [PyPI][pypi-home]:
+Install from [PyPI][pypi-home] using your preferred Python package
+manager:
 
-```bash
-pip install talend-task
-```
+- **pip**: `pip install talend-task`
+- **pipx**: `pipx install talend-task`
+- **uv**: `uv tool install talend-task`
 
 ## CLI
 
@@ -84,8 +85,7 @@ Select a job interactively or pass `--job` directly.
 
 ```
 $ talend_task --help
-usage: talend_task [-h] [--debug] [--wait] [--activity] [--job NAME] [--timeout SECS]
-                   [--poll-interval SECS]
+usage: talend_task [OPTIONS]
 
 Talend Cloud CLI
 

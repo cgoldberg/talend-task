@@ -257,6 +257,7 @@ def run_cli(
 
 
 def create_parser():
+
     def formatter(prog):
         return argparse.HelpFormatter(
             prog,
@@ -266,6 +267,7 @@ def create_parser():
 
     parser = argparse.ArgumentParser(
         description="Talend Cloud CLI",
+        usage="talend_task [OPTIONS]",
         formatter_class=formatter,
     )
     parser.add_argument(
