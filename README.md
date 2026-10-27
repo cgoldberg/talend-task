@@ -252,35 +252,6 @@ with TalendClient(api_url, credential) as client:
     job_id = client.get_job_id("Job_123")
     status = client.run(job_id, wait=True)
 ```
-----
-
-## Development
-
-- Install as editable package with required development/testing
-  dependencies:
-
-    ```
-    pip install --editable --group dev --group test .
-    ```
-
-- Run all tests:
-
-    ```
-    pytest
-    ```
-
-- Run linting and formatting:
-
-    ```
-    tox -e lint
-    ```
-
-- Run validation, linting, formatting, and all tests across all
-  supported/installed Python environments:
-
-    ```
-    tox
-    ```
 
 [github-profile]: https://github.com/cgoldberg
 [github-repo]: https://github.com/cgoldberg/talend-task
