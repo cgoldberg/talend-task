@@ -11,7 +11,7 @@ license-files = ["LICENSE"]
 authors = [{name = "Corey Goldberg"}]
 maintainers = [{name = "Corey Goldberg"}]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 keywords = [
     "talend",
     "talend-cloud",
@@ -28,8 +28,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
@@ -46,24 +44,24 @@ talend_task = "talend_task.cli:main"
 
 [project.urls]
 homepage = "https://github.com/cgoldberg/talend-task"
-source = "https://github.com/cgoldberg/talend-task"
-download = "https://pypi.org/project/talend-task"
+repository = "https://github.com/cgoldberg/talend-task"
+documentation = "https://coreygoldberg.com/talend-task"
 
 [dependency-groups]
-dev = [
-    "tox",
+build = [
+    "twine==7.0.0",
 ]
 docs = [
-    "pdoc",
+    "pdoc==16.0.0",
 ]
 lint = [
-    "ruff",
+    "ruff==0.17.3",
 ]
 test = [
-    "pytest",
+    "pytest==9.1.1",
 ]
 validate = [
-    "validate-pyproject[all]",
+    "validate-pyproject[all]==0.27",
 ]
 
 [tool.setuptools]
@@ -80,7 +78,7 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 88
 respect-gitignore = true
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -94,5 +92,5 @@ fixable = ["ALL"]
 "**/test_*.py" = ["INP001", "SLF001"]
 
 [tool.ruff.format]
-docstring-code-line-length = 88
 docstring-code-format = true
+docstring-code-line-length = 88
