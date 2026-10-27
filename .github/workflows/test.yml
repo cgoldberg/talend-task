@@ -38,18 +38,14 @@ jobs:
           check-latest: true
       - name: Install dependencies
         run: python -m pip install --upgrade pip tox
-      - name: Validate build and project configuration
-        run: tox
-        env:
-          TOXENV: validate
       - name: Run linting and formatting
         run: tox
         env:
           TOXENV: lint
-      - name: Run type checking
+      - name: Validate build and project configuration
         run: tox
         env:
-          TOXENV: type
+          TOXENV: validate
       - name: Run tests
         run: tox
         env:
