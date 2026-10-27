@@ -44,7 +44,7 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from dotenv import load_dotenv
 from rich.console import Console
@@ -93,7 +93,7 @@ def load_credential():
 
 
 def format_iso_timestamp(timestamp):
-    dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    dt = datetime.fromisoformat(timestamp)
     return dt.strftime("%m/%d/%Y %I:%M %p")
 
 
@@ -105,8 +105,8 @@ def convert_time(seconds):
 
 def compute_duration(start_timestamp, end_timestamp):
     fmt = "%Y-%m-%dT%H:%M:%S.%fZ"
-    start_dt = datetime.strptime(start_timestamp, fmt).replace(tzinfo=timezone.utc)
-    end_dt = datetime.strptime(end_timestamp, fmt).replace(tzinfo=timezone.utc)
+    start_dt = datetime.strptime(start_timestamp, fmt).replace(tzinfo=UTC)
+    end_dt = datetime.strptime(end_timestamp, fmt).replace(tzinfo=UTC)
     elapsed_secs = (end_dt - start_dt).total_seconds()
     return convert_time(elapsed_secs)
 
