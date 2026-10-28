@@ -734,7 +734,7 @@ wheels = [
 
 [[package]]
 name = "talend-task"
-version = "0.1.20"
+version = "0.1.21.dev0"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
