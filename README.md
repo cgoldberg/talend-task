@@ -48,8 +48,8 @@
 The `talend-task` package provides a command-line interface and Python API
 client for executing and monitoring jobs in [Talend Cloud][talend-cloud],
 including ETL pipelines and other data workflows. It uses the
-[Processing API][talend-processing-api] to trigger executions and monitor
-their status.
+[Processing API][talend-processing-api] to trigger executions and monitor their
+status.
 
 The package consists of:
 
@@ -65,8 +65,7 @@ a corresponding Talend Execution.
 
 ## Installation
 
-Install from [PyPI][pypi-home] using your preferred Python package
-manager:
+Install from [PyPI][pypi-home] using your preferred Python package manager:
 
 - **pip**: `pip install talend-task`
 - **pipx**: `pipx install talend-task`
@@ -123,7 +122,8 @@ identity.
 
 Regular user accounts authenticate using a **Personal Access Token (PAT)**. A
 PAT represents a specific user and inherits that user's permissions. Personal
-access tokens are generated in [Talend Management Console][talend-management-console].
+access tokens are generated in
+[Talend Management Console][talend-management-console].
 
 - **`TALEND_ACCESS_TOKEN`**: Personal Access Token
 
@@ -148,8 +148,8 @@ export TALEND_CLIENT_SECRET=<client-secret>
 
 #### Using a `.env` File
 
-Instead of setting environment variables, you can define them in a `.env`
-file in the installation directory or higher up the directory tree.
+Instead of setting environment variables, you can define them in a `.env` file
+in the installation directory or higher up the directory tree.
 
 ##### User account
 
@@ -253,11 +253,44 @@ with TalendClient(api_url, credential) as client:
     status = client.run(job_id, wait=True)
 ```
 
+----
+
+## Development Tooling
+
+This project uses `tox` as an environment and task orchestrator. It creates
+isolated virtual environments with required dependencies and provides commands
+for common development tasks.
+
+Dependencies are managed by `uv` and pinned in `uv.lock` to ensure consistent
+environments across development machines and CI.
+
+### Available Commands
+
+| Command             | Description                              |
+| ------------------- | ---------------------------------------- |
+| `tox -e lint`       | Run linting and formatting               |
+| `tox -e validate`   | Validate build and project configuration |
+| `tox -e py312`      | Run tests with Python 3.12               |
+| `tox -e py315`      | Run tests with Python 3.15               |
+| `tox -e lock`       | Update dependency lockfile               |
+| `tox -e docs`       | Build API docs                           |
+| `tox -e sdist`      | Build source distribution                |
+| `tox -e wheel`      | Build wheel                              |
+| `tox -e check-dist` | Validate built distribution              |
+
+#### Notes
+
+- See `tox.ini` for tox environment and task configuration.
+- See `pyproject.toml` for project dependencies and development tool
+  configuration.
+- See `uv.lock` for the resolved dependency versions, including transitive
+  dependencies.
+
+[api-docs]: https://coreygoldberg.com/talend-task
 [github-profile]: https://github.com/cgoldberg
 [github-repo]: https://github.com/cgoldberg/talend-task
-[pypi-home]: https://pypi.org/project/talend-task
 [mit-license]: https://raw.githubusercontent.com/cgoldberg/talend-task/refs/heads/main/LICENSE
-[api-docs]: https://coreygoldberg.com/talend-task
+[pypi-home]: https://pypi.org/project/talend-task
 [talend-cloud]: https://talend.com
 [talend-management-console]: https://help.qlik.com/talend/management-console-user-guide
 [talend-processing-api]: https://talend.qlik.dev/apis/processing/2021-03
